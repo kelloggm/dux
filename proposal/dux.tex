@@ -1,0 +1,188 @@
+\title{Dux: Automating Dependency Management}
+\author{
+        Martin Kellogg \\
+        University of Washington
+            \and
+        Steven Lyubomirsky\\
+        University of Washington
+}
+
+
+\documentclass[10pt,conference]{IEEEtran}
+
+\usepackage{graphicx}
+\usepackage{myref}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tikz}
+
+\begin{document}
+
+\maketitle
+
+\lstset{language=C}
+
+\begin{abstract}
+
+Research into build systems has focused on compiling and testing code, resulting
+in high-quality tools for these activities. However, an often-overlooked step in
+building code is \textit{dependency management}---the process of setting up the
+environment so that the build can succeed. We argue that this process should be
+treated as a separate problem from compiling and testing---the traditional domain
+of build systems. Instead, we propose a \textit{build orchestration tool}, called
+Dux, which focuses on the dependency management problem and then delegates to a
+traditional build system for compiling and testing. Dux observes a successful
+build for a project, and writes the information necessary to reproduce the build
+to a configuration file. Further, Dux uses a content-addressed distributed file
+system as a backing store for dependencies. When a project is observed to require
+a dependency that is not in Dux's file system, it uploads a copy of the dependency.
+By reading the configuration file, Dux can reproduce the build of the project on
+a new system by checking the system for the required dependencies, and downloading
+any missing ones using the copy created when creating the configuration file,
+trivially permitting easy, reproducible builds.
+
+\end{abstract}
+
+\section{Introduction}
+
+Modern build systems typically combine two functions:
+setting up the environment and ensuring dependencies are available (\textit{build orchestration})
+and compiling and testing (\textit{building}).
+Existing tools are very good at the latter, but often fail at the former;
+as an example, a study at Google found that more than 50\% of build failures
+by real developers were caused by dependency errors~\cite{googlebuilderrors}.
+We propose that by separating build orchestration from the process of actually
+compiling and building software we can improve the reliability and reproducibility of builds.
+We propose a specialized build orchestration tool which is responsible for setting up the environment
+and providing dependencies, and then dispatches to a traditional build system.
+By separating the two tools, we can achieve several advantages over traditional tools:
+\begin{itemize}
+\item{
+\textit{Language independence:}
+A specialized build orchestration tool can operate on any language.
+Anecdotally, we have noticed that the best available build tools specialize
+in a particular language (e.g. \textsc{ocamlbuild} or \textsc{gradle}).
+A language-independent build orchestration tool can allow projects to retain
+their natural build system while simplifying inter-language dependencies.
+}
+\item{
+\textit{Automation:}
+Modern industrial build systems (like Google's Bazel~\cite{blaze} or Facebook’s Buck~\cite{buck}) provide fast,
+reproducible builds---but at the cost of large, brittle configuration files.
+By decoupling building from dependency management, we can automatically
+discover dependencies and write configuration files automatically.
+By combining this feature with the ability to dispatch to existing build systems,
+our proposed tool makes migrating an existing project a push-button task.
+}
+\end{itemize}
+
+\section{Technical Approach}
+
+\subsection{Migration}
+
+Migrating a project to use Dux is simple.
+The developer demonstrates a build to Dux by providing a command (e.g. \textsc{ant build-and-test}),
+and Dux executes that command in a sandbox, which records information about what the build does:
+which files it accesses, which environment variables it reads, which programs it executes, etc.
+Dux uses Linux's \textsc{strace} utility to perform this analysis---though this limits Dux to
+Linux-based platforms, similar tools exist on other platforms: \textsc{dtruss} for Mac OSX or
+\textsc{Process Monitor} for Windows. Extending Dux to operate on these platforms is future work.
+
+Dux records the information it captures about the build into a configuration file.
+To ensure that the same versions of artifacts are used during future builds,
+Dux uses a hashing function to obtain a hash of each artifact required by the build.
+Dux then communicates with a remote content-addressed file system~\cite{venti},
+which is indexed by the hashes and contains artifacts.
+If the artifact in question is not already in this remote file system, the migration tool uploads it.
+The hashes (keys into the remote file system) are recorded in the configuration file.
+Once the configuration file has been generated, it can be committed to version control.
+
+\subsection{Building}
+
+If a configuration file created by Dux is present, Dux the system for the dependencies required,
+and downloads any that are not present.
+It sets up the environment exactly as the configuration file specifies.
+Then, it dispatches to the underlying build system to complete the build---Dux is specialized
+to dependency management, and does not know or reason about actually building the software.
+By separating these concerns, Dux can provide reproducible builds even for legacy software
+with significant customized build logic, because migrating to use Dux requires only
+demonstrating a correct build.
+
+\section{Project Timeline}
+
+For each project milestone, we have identified our goals for Dux by that time. The tool described
+in the previous sections is the final product.
+
+\subsection{First Checkpoint}
+
+\begin{itemize}
+\item{Dux can observe a program and determine which \textsc{strace} events are relevant.}
+\item{A content-addressable file system has been identified or written
+that Dux will use to store depedency artifacts.}
+\item{A configuration file format has been identified.}
+\item{Dux can read a configuration file and print text that indicates what actions it
+should perform based on the configuration file, though it may not actually perform the actions.}
+\end{itemize}
+
+\subsection{Second Checkpoint}
+
+\begin{itemize}
+\item{Dux can observe a build and all files opened and all programs executed.}
+\item{Dux can send required dependencies to a central server, which uses a content-addressed filesystem to store them.}
+\item{Dux can convert a build observation into a configuration file that allows the build to be
+repeated on a machine without the required dependencies installed,
+by reading the configuration file and downloading the dependencies from the
+central server.}
+\item{Dux provides an abstraction of an underlying build system that supports at least one build systems.}
+\end{itemize}
+
+\subsection{Final Project}
+
+\begin{itemize}
+\item{Dux can observe a build and all files opened and all programs executed.}
+\item{Dux can distinguish relative and absolute paths.}
+\item{Dux can tell the difference between files part of the project and files that are not
+(i.e. the difference between build artifacts and dependencies’ artifacts).}
+\item{Dux can send required dependencies to a central server, which uses a content-addressed filesystem to store them.}
+\item{Dux can convert a build observation into a configuration file that allows the build to be
+repeated on a machine without the required dependencies installed,
+by reading the configuration file and downloading the dependencies from the
+central server and putting them in the expected places.}
+\item{Dux provides an abstraction of an underlying build system that supports at least two build systems.}
+\end{itemize}
+
+\subsection{Stretch Goals}
+
+\begin{itemize}
+\item{Dux includes a library that abstracts \textsc{strace}'s functionality, and is able to use a similar tool
+on at least one other platform.}
+\item{Dux can record the values of relevant environment variables in the configuration file,
+and reason about paths or chains of environment variable reads to capture a complete state.}
+\end{itemize}
+
+\section{Related Work}
+
+Nothing to see here.
+
+\section{References}
+
+\begingroup
+\renewcommand{\section}[2]{}%
+
+% The following two commands are all you need in the initial runs of
+% your .tex file to produce the bibliography for the citations in your
+% paper.
+\bibliographystyle{plain}
+\bibliography{genprog-bib/merged}
+% You must have a proper ``.bib'' file
+% and remember to run:
+% latex bibtex latex latex
+% to resolve all references
+%
+% ACM needs 'a single self-contained file'!
+%
+\endgroup
+
+\end{document}
