@@ -37,11 +37,11 @@ traditional build system for compiling and testing. Dux observes a successful
 build for a project, and writes the information necessary to reproduce the build
 to a configuration file. Further, Dux uses a content-addressed distributed file
 system as a backing store for dependencies. When a project is observed to require
-a dependency that is not in Dux's file system, it uploads a copy of the dependency.
-By reading the configuration file, Dux can reproduce the build of the project on
-a new system by checking the system for the required dependencies, and downloading
-any missing ones using the copy created when creating the configuration file,
-trivially permitting easy, reproducible builds.
+a dependency that is not in Dux's file system, it uploads a copy of the dependency
+and indexes it by its hash. By reading the configuration file, Dux can reproduce 
+the build of the project on a new system by checking the system for the required 
+dependencies, and downloading any missing ones using the copy created when creating 
+the configuration file, trivially permitting easy, reproducible builds.
 
 \end{abstract}
 
