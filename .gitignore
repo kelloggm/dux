@@ -218,3 +218,7 @@ TSWLatexianTemp*
 
 # expex forward references with \gathertags
 *-tags.tex
+
+# IntelliJ IDEA files
+*.iml
+/.idea/*
