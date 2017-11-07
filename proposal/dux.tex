@@ -22,7 +22,7 @@
 
 \maketitle
 
-\lstset{language=C}
+\lstset{language=bash}
 
 \begin{abstract}
 
@@ -63,13 +63,13 @@ By separating the two tools, we can achieve several advantages over traditional 
 \textit{Language independence:}
 A specialized build orchestration tool can operate on any language.
 Anecdotally, we have noticed that the best available build tools specialize
-in a particular language (e.g. \textsc{ocamlbuild} or \textsc{gradle}).
+in a particular language (e.g. \texttt{ocamlbuild} or \texttt{gradle}).
 A language-independent build orchestration tool can allow projects to retain
 their natural build system while simplifying inter-language dependencies.
 }
 \item{
 \textit{Automation:}
-Modern industrial build systems (like Google's Bazel~\cite{blaze} or Facebook’s Buck~\cite{buck}) provide fast,
+Modern industrial build systems (like Google's Bazel~\cite{blaze} or Facebook's Buck~\cite{buck}) provide fast,
 reproducible builds---but at the cost of large, brittle configuration files.
 By decoupling building from dependency management, we can automatically
 discover dependencies and write configuration files automatically.
@@ -83,12 +83,12 @@ our proposed tool makes migrating an existing project a push-button task.
 \subsection{Migration}
 
 Migrating a project to use Dux is simple.
-The developer demonstrates a build to Dux by providing a command (e.g. \textsc{ant build-and-test}),
+The developer demonstrates a build to Dux by providing a command (e.g. \texttt{ant build-and-test}),
 and Dux executes that command in a sandbox, which records information about what the build does:
 which files it accesses, which environment variables it reads, which programs it executes, etc.
-Dux uses Linux's \textsc{strace} utility to perform this analysis---though this limits Dux to
-Linux-based platforms, similar tools exist on other platforms: \textsc{dtruss} for Mac OSX or
-\textsc{Process Monitor} for Windows. Extending Dux to operate on these platforms is future work.
+Dux uses Linux's \texttt{strace} utility to perform this analysis---though this limits Dux to
+Linux-based platforms, similar tools exist on other platforms: \texttt{dtruss} for Mac OSX or
+\texttt{Process Monitor} for Windows. Extending Dux to operate on these platforms is future work.
 
 Dux records the information it captures about the build into a configuration file.
 To ensure that the same versions of artifacts are used during future builds,
@@ -118,7 +118,7 @@ in the previous sections is the final product.
 \subsection{First Checkpoint}
 
 \begin{itemize}
-\item{Dux can observe a program and determine which \textsc{strace} events are relevant.}
+\item{Dux can observe a program and determine which \texttt{strace} events are relevant.}
 \item{A content-addressable file system has been identified or written
 that Dux will use to store depedency artifacts.}
 \item{A configuration file format has been identified.}
@@ -156,7 +156,7 @@ central server and putting them in the expected places.}
 \subsection{Stretch Goals}
 
 \begin{itemize}
-\item{Dux includes a library that abstracts \textsc{strace}'s functionality, and is able to use a similar tool
+\item{Dux includes a library that abstracts \texttt{strace}'s functionality, and is able to use a similar tool
 on at least one other platform.}
 \item{Dux can record the values of relevant environment variables in the configuration file,
 and reason about paths or chains of environment variable reads to capture a complete state.}
@@ -164,7 +164,44 @@ and reason about paths or chains of environment variable reads to capture a comp
 
 \section{Related Work}
 
-Nothing to see here.
+Several modern build systems include a dependency management strategy. Tools like
+Maven~\cite{Maven}, Gradle~\cite{Gradle}, Bazel~\cite{blaze}, or Buck~\cite{buck}
+are primarily systems for building and testing software, but each includes the
+ability to specify dependencies manually in some kind of configuration file.
+Unlike Dux's configuration files, which are automatically generated, the configuration
+files for these tools use domain-specific languages that developers have to learn,
+write, and maintain. Some tools (such as Bazel) also include sandboxing tools
+that force the build to only use dependencies explicitly specified in the
+configuration file.
+
+Most recent advances in build technology have come from industry, not from
+academia. Adams and McIntosh breifly cover build systems in their survey of
+release engineering~\cite{adams2016modern}, in an effort to urge academics to
+pay more attention to the work going on in industry. Cox et al. examined how
+to prioritize updating dependencies, but did not attempt to fix build issues~\cite{cox2015measuring}.
+McIntosh et al. built a classifier to determine when changes to the build
+system would be necessary based on the changes introduced to source code~\cite{mcintosh2014mining}.
+Seo et al. performed an empirical study at Google, and determined that more
+than 50\% of build breakages were caused by dependency errors~\cite{googlebuilderrors}.
+This is especially motivating for our work, since Google's Bazel build system
+is considered the industry standard---and dependency issues are their most
+common build error.
+
+\section{Future Work}
+A key question remains, even once Dux is implemented: how does Dux deal with
+change, either in the environment or in the code it is building? We view building
+the version of Dux we described here as the first step towards an adaptive
+build system that can repair build scripts when they fail, using techniques
+from the automated program repair literature. Existing program repair techniques
+suffer from high false positive rates, in large part due to the unstructured
+nature of the problem---with only a few (hundred? thousand?) test cases, it is
+difficult to model all the correct behavior of a large C program~\cite{genprogisbadrinard}.
+By contrast, the structured nature of a build configuration file and the relatively
+small size of the change set make build script repair an attractive domain for
+automated repair tools. By combining a tool like Dux with a build script repair
+system, one can imagine a build tool that can correctly deploy software even in
+the face of different dependency requirements or a different platform automatically,
+making deploying software in new environments a much simpler process.
 
 \section{References}
 
