@@ -222,3 +222,6 @@ TSWLatexianTemp*
 # IntelliJ IDEA files
 *.iml
 /.idea/*
+
+# emacs backups
+*~
