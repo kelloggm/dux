@@ -160,6 +160,11 @@ central server and putting them in the expected places.}
 on at least one other platform.}
 \item{Dux can record the values of relevant environment variables in the configuration file,
 and reason about paths or chains of environment variable reads to capture a complete state.}
+\item{Dux provides an API for writing special handlers for particular dependencies. These handlers would be
+used as callbacks within the tool for finer-grained reasoning. For example, a user may wish to provide
+handlers for generating more informative messages when dealing with particular compilers or to parse
+environment variables to look for the presence of particular fields. At least on its own, \texttt{strace}
+is often a blunt instrument.}
 \end{itemize}
 
 \section{Related Work}
