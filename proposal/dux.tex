@@ -173,6 +173,8 @@ Several modern build systems include a dependency management strategy. Tools lik
 Maven~\cite{Maven}, Gradle~\cite{Gradle}, Bazel~\cite{blaze}, or Buck~\cite{buck}
 are primarily systems for building and testing software, but each includes the
 ability to specify dependencies manually in some kind of configuration file.
+Ivy~\cite{Ivy} is exclusively a dependency management tool, but still requires
+a manually written configuration file.
 Unlike Dux's configuration files, which are automatically generated, the configuration
 files for these tools use domain-specific languages that developers have to learn,
 write, and maintain. Some tools (such as Bazel) also include sandboxing tools
