@@ -1,5 +1,9 @@
 package org.dux.cli;
 
+import com.google.devtools.common.options.OptionsParser;
+
+import java.util.Collections;
+
 /**
  * The driver for the Dux build orchestration system.
  *
@@ -9,6 +13,14 @@ package org.dux.cli;
  */
 public class DuxCLI {
     public static void main(String[] args) {
-        System.out.println("Bazel is working");
+        OptionsParser parser = OptionsParser.newOptionsParser(DuxOptions.class);
+        parser.parseAndExitUponError(args);
+        DuxOptions options = parser.getOptions(DuxOptions.class);
+    }
+
+    private static void printUsage(OptionsParser parser) {
+        System.out.println("Usage: dux OPTIONS");
+        System.out.println(parser.describeOptions(Collections.<String, String>emptyMap(),
+                OptionsParser.HelpVerbosity.LONG));
     }
 }
