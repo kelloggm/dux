@@ -16,6 +16,10 @@ public class DuxCLI {
         OptionsParser parser = OptionsParser.newOptionsParser(DuxOptions.class);
         parser.parseAndExitUponError(args);
         DuxOptions options = parser.getOptions(DuxOptions.class);
+
+        if (options.help) {
+            printUsage(parser);
+        }
     }
 
     private static void printUsage(OptionsParser parser) {
