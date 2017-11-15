@@ -1,4 +1,5 @@
 java_binary(
-    name = "DuxCLI",
+    name = "dux",
+    main_class = "org.dux.cli.DuxCLI",
     srcs = glob(["src/org/dux/cli/*.java"]),
 )
