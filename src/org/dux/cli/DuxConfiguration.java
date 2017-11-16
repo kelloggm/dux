@@ -24,13 +24,13 @@ public class DuxConfiguration implements Serializable {
     final ZonedDateTime creationTime;
     final List<DuxConfigurationEntry> entries;
 
-    public DuxConfiguration(@Nullable String projectName) {
+    public DuxConfiguration(@Nullable final String projectName) {
         this.projectName = projectName;
         this.creationTime = ZonedDateTime.now();
         this.entries = new ArrayList<>();
     }
 
-    public void add(DuxConfigurationEntry entry) {
+    public void add(final DuxConfigurationEntry entry) {
         entries.add(entry);
     }
 
