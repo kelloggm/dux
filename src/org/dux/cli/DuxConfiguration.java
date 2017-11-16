@@ -33,4 +33,19 @@ public class DuxConfiguration implements Serializable {
     public void add(DuxConfigurationEntry entry) {
         entries.add(entry);
     }
+
+    @Override
+    public String toString() {
+        String result = "DuxConfiguration{" +
+                "projectName='" + projectName + '\'' +
+                ", creationTime=" + creationTime +
+                ", entries={";
+
+        for (DuxConfigurationEntry entry : entries) {
+            result += entry + ", ";
+        }
+        result = result.substring(0, result.length() - 1);
+        result += "}";
+        return result;
+    }
 }
