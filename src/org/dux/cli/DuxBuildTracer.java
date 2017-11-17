@@ -75,23 +75,36 @@ public class DuxBuildTracer {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 
         for (DuxStraceCall c : calls) {
+
+            System.out.println(c);
+
             if (!c.call.equals("open")) {
+                System.out.println("continuing because it's not an open");
                 continue;
             }
 
-	    // disregard if return value unknown or indicated failure
-	    if (!c.knownReturn || c.returnValue == -1) {
-		continue;
-	    }
+            // disregard if return value unknown or indicated failure
+            if (!c.knownReturn || c.returnValue == -1) {
+                System.out.println("continuing because failure");
+                continue;
+            }
 
             // don't hash if it's already present
             if (fileHashes.containsKey(c.call)) {
+                System.out.println("continuing because hash already contains key");
                 continue;
             }
 
+            System.out.println("doing things");
+
             // need to get first argument, which is absolute path surrounded in quotes
             String rawPath = c.args[0];
+
+            System.out.println("raw path: " + rawPath);
+
             String path = rawPath.substring(1, rawPath.length() - 1);
+
+            System.out.println("path: " + path);
 
             HashCode hash = hashFile(path);
             fileHashes.put(path, hash);
