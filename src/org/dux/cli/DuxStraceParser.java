@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class DuxStraceParser {
     // regex corresponds to "call(args) = return"
-    private static final String CALL_REGEX = "\\p{Alpha}\\p{Alnum}*\\s*\\(.*\\)\\s*\\=\\s*\\d+";
+    private static final String CALL_REGEX = "\\p{Alpha}(\\p{Alnum}|_)*\\s*\\(.*\\)\\s*\\=.*";
 
     public static List<DuxStraceCall> parse(String path)
             throws IOException, FileNotFoundException {
