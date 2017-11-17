@@ -68,44 +68,25 @@ public class DuxBuildTracer {
 	}
     }
 
-    // if the line is a call to open that succeeded, return the opened file
-    // otherwise return empty
-    private Optional<String> getOpenedFile(String line) {
-	if (!line.contains("open(")) { // not a call to open
-	    return Optional.empty();
-	}
-
-	if (line.contains("-1")) { // call failed
-	    return Optional.empty();
-	}
-
-	// first argument to open is the path
-	// strace lists the full path
-	int pathIdx = line.indexOf("open(") + "open(".length();
-	int endPathIdx = line.indexOf(',', pathIdx);
-	// +1 and -1 because the path is surrounded by quotes
-	String path = line.substring(pathIdx + 1, endPathIdx - 1);
-	return Optional.of(path);
-    }
-
     private void parseStraceFile() throws IOException, FileNotFoundException {
-	try (FileReader fr = new FileReader(TMP_FILE);
-	     BufferedReader br = new BufferedReader(fr)) {
-	    while (br.ready()) {
-		String line = br.readLine();
-		Optional<String> openedFile = getOpenedFile(line);
-		if (!openedFile.isPresent()) {
-		    continue;
-		}
+	List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 
-		String path = openedFile.get();		
-		// don't hash if it's already present
-		if (fileHashes.containsKey(path)) {
-		    continue;
-		}
-		HashCode hash = hashFile(path);
-		fileHashes.put(path, hash);
+	for (DuxStraceCall c : calls) {
+	    if (!c.call.equals("open")) {
+		continue;
 	    }
+    
+	    // don't hash if it's already present
+	    if (fileHashes.containsKey(c.call)) {
+		continue;
+	    }
+
+	    // need to get first argument, which is absolute path surrounded in quotes
+	    String rawPath = c.args[0];
+	    String path = rawPath.substring(1, rawPath.length() - 1);
+
+	    HashCode hash = hashFile(path);
+	    fileHashes.put(path, hash);
 	}
     }
 
