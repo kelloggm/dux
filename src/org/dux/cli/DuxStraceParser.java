@@ -45,8 +45,14 @@ public class DuxStraceParser {
     // expects args to be in the form "arg1, arg2, {possible, struct, literal...}, ..., argn)"
     private static String[] parseStraceArgs(String rawArgs) {
 	int length = rawArgs.length();
-	ArrayList<String> args = new ArrayList<>();
 
+	// handle the zero-args case right away (not sure it's possible in strace though)
+	// zero-args is whitespace followed by close paren
+	if (rawArgs.matches("\\s*\\)")) {
+	    return new String[0];
+	}
+
+	ArrayList<String> args = new ArrayList<>();
 	int argStart = 0;
 	int nestingDepth = 0;
 	for (int i = 0; i < length; i++) {
