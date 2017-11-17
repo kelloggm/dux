@@ -72,10 +72,10 @@ public class DuxBuildTracer {
                 continue;
             }
 
-            // disregard if return value indicated failure
-            if (c.returnValue == -1) {
-                continue;
-            }
+	    // disregard if return value unknown or indicated failure
+	    if (!c.knownReturn || c.returnValue == -1) {
+		continue;
+	    }
 
             // don't hash if it's already present
             if (fileHashes.containsKey(c.call)) {
