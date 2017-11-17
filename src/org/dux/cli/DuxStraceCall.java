@@ -11,16 +11,16 @@ public class DuxStraceCall {
     public final int returnValue;
 
     public DuxStraceCall(String call, String[] args, int returnValue) {
-	this.call = call;
-	this.args = Arrays.<String>copyOf(args, args.length);
-	this.returnValue = returnValue;
+        this.call = call;
+        this.args = Arrays.<String>copyOf(args, args.length);
+        this.returnValue = returnValue;
     }
 
     @Override
     public String toString() {
-	return "DuxStraceCall{"
-	    + "call=\"" + call + "\", "
-	    + "args=\"" + Arrays.toString(args) + "\", "
-	    + "returnValue=\"" + returnValue + "\"}";
+        return "DuxStraceCall{"
+                + "call=\"" + call + "\", "
+                + "args=\"" + Arrays.toString(args) + "\", "
+                + "returnValue=\"" + returnValue + "\"}";
     }
 }
