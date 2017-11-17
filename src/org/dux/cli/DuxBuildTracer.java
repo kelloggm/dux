@@ -1,22 +1,19 @@
 package org.dux.cli;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.FileNotFoundException;
-
-import com.google.common.hash.Hashing;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.HashCode;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An object responsible for invoking the appropriate build tracer
@@ -75,10 +72,10 @@ public class DuxBuildTracer {
                 continue;
             }
 
-	    // disregard if return value indicated failure
-	    if (c.returnValue == -1) {
-		continue;
-	    }
+            // disregard if return value indicated failure
+            if (c.returnValue == -1) {
+                continue;
+            }
 
             // don't hash if it's already present
             if (fileHashes.containsKey(c.call)) {

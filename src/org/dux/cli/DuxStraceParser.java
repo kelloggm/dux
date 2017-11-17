@@ -2,16 +2,12 @@ package org.dux.cli;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-
-import java.io.File;
-import java.io.FileReader;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An object responsible for reading in an strace dump line by line and
@@ -44,35 +40,35 @@ public class DuxStraceParser {
 
     // expects args to be in the form "arg1, arg2, {possible, struct, literal...}, ..., argn)"
     private static String[] parseStraceArgs(String rawArgs) {
-	int length = rawArgs.length();
+        int length = rawArgs.length();
 
-	// handle the zero-args case right away (not sure it's possible in strace though)
-	// zero-args is whitespace followed by close paren
-	if (rawArgs.matches("\\s*\\)")) {
-	    return new String[0];
-	}
+        // handle the zero-args case right away (not sure it's possible in strace though)
+        // zero-args is whitespace followed by close paren
+        if (rawArgs.matches("\\s*\\)")) {
+            return new String[0];
+        }
 
-	ArrayList<String> args = new ArrayList<>();
-	int argStart = 0;
-	int nestingDepth = 0;
-	for (int i = 0; i < length; i++) {
-	    char c = rawArgs.charAt(i);
-	    if (c == '{') { // struct literal start
-		nestingDepth++;
-	    }
-	    if (c == '}') {
-		nestingDepth--;
-	    }
-	    // ignore commas inside struct literals, otherwise delimit arguments at commas
-	    // close paren ==> end of args, so delimit there in all cases
-	    if ((c == ',' && nestingDepth == 0) || c == ')') {
-		String arg = rawArgs.substring(argStart, i);
-		args.add(arg.trim());
-		argStart = i + 1;
-	    }
-	}
+        ArrayList<String> args = new ArrayList<>();
+        int argStart = 0;
+        int nestingDepth = 0;
+        for (int i = 0; i < length; i++) {
+            char c = rawArgs.charAt(i);
+            if (c == '{') { // struct literal start
+                nestingDepth++;
+            }
+            if (c == '}') {
+                nestingDepth--;
+            }
+            // ignore commas inside struct literals, otherwise delimit arguments at commas
+            // close paren ==> end of args, so delimit there in all cases
+            if ((c == ',' && nestingDepth == 0) || c == ')') {
+                String arg = rawArgs.substring(argStart, i);
+                args.add(arg.trim());
+                argStart = i + 1;
+            }
+        }
 
-	return args.toArray(new String[args.size()]);
+        return args.toArray(new String[args.size()]);
     }
 
     private static @Nullable DuxStraceCall parseLine(String line) {
@@ -94,11 +90,11 @@ public class DuxStraceParser {
         String rhs = values[1].trim();
 
         // split LHS on open parenthesis: the call is to the left, the args are to the right
-	String[] callTokens = lhs.split("\\(");
+        String[] callTokens = lhs.split("\\(");
         assert (callTokens.length == 2);
         String call = callTokens[0].trim();
-	String rawArgs = callTokens[1].trim(); // leave close paren
-	String[] args = parseStraceArgs(rawArgs);
+        String rawArgs = callTokens[1].trim(); // leave close paren
+        String[] args = parseStraceArgs(rawArgs);
 
         // there may be an errno after the return value; split on whitespace to ignore
         String rawReturn = rhs.split("\\s")[0];
