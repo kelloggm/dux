@@ -38,7 +38,7 @@ public class DuxBuildTracer {
     public DuxBuildTracer(List<String> args) {
         ArrayList<String> argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
         argList.addAll(args);
-        this.args = (String[]) argList.toArray();
+        this.args = argList.toArray(new String[0]);
 
         fileHashes = new HashMap<String, HashCode>();
     }

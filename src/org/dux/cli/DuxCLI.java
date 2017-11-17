@@ -2,6 +2,7 @@ package org.dux.cli;
 
 import com.google.devtools.common.options.OptionsParser;
 
+import java.io.IOException;
 import java.util.Collections;
 
 /**
@@ -19,6 +20,31 @@ public class DuxCLI {
 
         if (options.help) {
             printUsage(parser);
+            return;
+        }
+
+        if (options.command.equals("NOT SET")) {
+            // This means no command was specified. Read and print the specified dux file.
+            DuxConfiguration config = DuxConfigurationIO.read(options.file);
+            System.out.println(config);
+            return;
+        } else {
+            // A command was specified, so execute and trace it, and print the results to
+            // the specified config file.
+            DuxBuildTracer tracer = new DuxBuildTracer(Collections.singletonList(options.command));
+            try {
+                tracer.trace();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+                return;
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+                return;
+            }
+            String displayName = options.displayName.equals("NOT SET") ? null : options.displayName;
+            DuxConfiguration config = new DuxConfiguration(displayName);
+            tracer.dumpToConfiguration(config);
+            DuxConfigurationIO.write(options.file, config);
         }
     }
 

@@ -12,7 +12,31 @@ public class DuxOptions extends OptionsBase {
             name = "help",
             abbrev = 'h',
             help = "Prints usage info.",
-            defaultValue = "true"
+            defaultValue = "false"
     )
     public boolean help;
+
+    @Option(
+            name = "command",
+            abbrev = 'c',
+            help = "The command to trace.",
+            defaultValue = "NOT SET"
+    )
+    public String command;
+
+    @Option(
+            name = "name",
+            abbrev = 'n',
+            help = "A name to associate with the generated config file.",
+            defaultValue = "NOT SET"
+    )
+    public String displayName;
+
+    @Option(
+            name = "file",
+            abbrev = 'f',
+            help = "The name of the configuration file.",
+            defaultValue = "build.dux"
+    )
+    public String file;
 }
