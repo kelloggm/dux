@@ -60,7 +60,7 @@ public class DuxStraceParser {
 	String rhs = values[1].trim();
 	
 	// split on parentheses, whitespaces, and commas ==> first is call, later are args
-	String[] callTokens = lhs.split("\\s|\\,|\\(|\\)");
+	String[] callTokens = lhs.split("(\\s|\\,|\\(|\\))+");
 	assert (callTokens.length > 0);
 	String call = callTokens[0];
 	String[] args = new String[callTokens.length - 1];
