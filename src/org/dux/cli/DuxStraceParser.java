@@ -1,6 +1,7 @@
 package org.dux.cli;
 
-import java.util.Optional;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -29,12 +30,12 @@ public class DuxStraceParser {
              BufferedReader br = new BufferedReader(fr)) {
             while (br.ready()) {
                 String line = br.readLine();
-                Optional<DuxStraceCall> call = parseLine(line);
-                if (!call.isPresent()) {
+                DuxStraceCall call = parseLine(line);
+                if (call == null) {
                     continue;
                 }
 
-                calls.add(call.get());
+                calls.add(call);
             }
         }
 
@@ -68,9 +69,9 @@ public class DuxStraceParser {
 	return args.toArray(new String[args.size()]);
     }
 
-    private static Optional<DuxStraceCall> parseLine(String line) {
+    private static @Nullable DuxStraceCall parseLine(String line) {
         if (!line.matches(CALL_REGEX)) {
-            return Optional.empty();
+            return null;
         }
 
         // before the call, we may have "[PID ####]" so get rid of it
@@ -97,6 +98,6 @@ public class DuxStraceParser {
         String rawReturn = rhs.split("\\s")[0];
         int returnValue = Integer.parseInt(rawReturn);
 
-        return Optional.of(new DuxStraceCall(call, args, returnValue));
+        return new DuxStraceCall(call, args, returnValue);
     }
 }
