@@ -102,8 +102,11 @@ public class DuxStraceParser {
 
         // there may be an errno after the return value; split on whitespace to ignore
         String rawReturn = rhs.split("\\s")[0];
-        int returnValue = Integer.parseInt(rawReturn);
+	if (rawReturn.equals("?")) {
+	    return new DuxStraceCall(call, args);
+	}
 
+	int returnValue = Integer.parseInt(rawReturn);
         return new DuxStraceCall(call, args, returnValue);
     }
 }
