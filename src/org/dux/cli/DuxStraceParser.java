@@ -41,6 +41,33 @@ public class DuxStraceParser {
         return calls;
     }
 
+    // expects args to be in the form "arg1, arg2, {possible, struct, literal...}, ..., argn)"
+    private static String[] parseStraceArgs(String rawArgs) {
+	int length = rawArgs.length();
+	ArrayList<String> args = new ArrayList<>();
+
+	int argStart = 0;
+	int nestingDepth = 0;
+	for (int i = 0; i < length; i++) {
+	    char c = rawArgs.charAt(i);
+	    if (c == '{') { // struct literal start
+		nestingDepth++;
+	    }
+	    if (c == '}') {
+		nestingDepth--;
+	    }
+	    // ignore commas inside struct literals, otherwise delimit arguments at commas
+	    // close paren ==> end of args, so delimit there in all cases
+	    if ((c == ',' && nestingDepth == 0) || c == ')') {
+		String arg = rawArgs.substring(argStart, i);
+		args.add(arg.trim());
+		argStart = i + 1;
+	    }
+	}
+
+	return args.toArray(new String[args.size()]);
+    }
+
     private static Optional<DuxStraceCall> parseLine(String line) {
         if (!line.matches(CALL_REGEX)) {
             return Optional.empty();
@@ -59,14 +86,12 @@ public class DuxStraceParser {
         String lhs = values[0].trim();
         String rhs = values[1].trim();
 
-        // split on parentheses, whitespaces, and commas ==> first is call, later are args
-        String[] callTokens = lhs.split("(\\s|\\,|\\(|\\))+");
-        assert (callTokens.length > 0);
-        String call = callTokens[0];
-        String[] args = new String[callTokens.length - 1];
-        for (int i = 1; i < callTokens.length; i++) {
-            args[i - 1] = callTokens[i].trim();
-        }
+        // split LHS on open parenthesis: the call is to the left, the args are to the right
+	String[] callTokens = lhs.split("\\(");
+        assert (callTokens.length == 2);
+        String call = callTokens[0].trim();
+	String rawArgs = callTokens[1].trim(); // leave close paren
+	String[] args = parseStraceArgs(rawArgs);
 
         // there may be an errno after the return value; split on whitespace to ignore
         String rawReturn = rhs.split("\\s")[0];
