@@ -111,8 +111,11 @@ public class DuxBuildTracer {
 
         try (FileInputStream fs = new FileInputStream(path)) {
             byte[] buf = new byte[FILE_BUF_SIZE];
-            while (fs.available() > 0) {
+            while (true) {
                 int len = fs.read(buf);
+		if (len == -1) {
+		    break;
+		}
                 hasher.putBytes(buf, 0, len);
             }
         }
