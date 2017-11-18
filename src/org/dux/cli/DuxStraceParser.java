@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class DuxStraceParser {
     // regex corresponds to "call(args) = return"
-    private static final String CALL_REGEX = "\\p{Alpha}(\\p{Alnum}|_)*\\s*\\(.*\\)\\s*\\=.*";
+    private static final String CALL_REGEX = ".*\\p{Alpha}(\\p{Alnum}|_)*\\s*\\(.*\\)\\s*\\=.*";
 
     public static List<DuxStraceCall> parse(String path)
             throws IOException, FileNotFoundException {
@@ -76,13 +76,17 @@ public class DuxStraceParser {
             return null;
         }
 
-        // before the call, we may have "[PID ####]" so get rid of it
+        // before the call, we may have "[PID ####]" or just a PID
+	// so get rid of it
         String sanitized = line;
         if (line.startsWith("[pid")) {
             int close = line.indexOf(']');
             sanitized = line.substring(close + 1);
         }
-
+	if (line.matches("\\d+.*")) {
+	    sanitized = sanitized.split("\\s+", 2)[1];
+	}
+	    
         String[] values = sanitized.split("\\=");
         assert (values.length == 2);
 

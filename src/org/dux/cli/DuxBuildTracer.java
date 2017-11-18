@@ -84,14 +84,14 @@ public class DuxBuildTracer {
 		continue;
 	    }
 
-            // don't hash if it's already present
-            if (fileHashes.containsKey(c.call)) {
-                continue;
-            }
-
             // need to get first argument, which is absolute path surrounded in quotes
             String rawPath = c.args[0];
             String path = rawPath.substring(1, rawPath.length() - 1);
+
+            // don't hash if it's already present
+            if (fileHashes.containsKey(path)) {
+                continue;
+            }
 
             HashCode hash = hashFile(path);
             fileHashes.put(path, hash);
