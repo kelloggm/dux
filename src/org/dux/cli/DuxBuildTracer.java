@@ -27,9 +27,9 @@ public class DuxBuildTracer {
     private static final String TMP_FILE = ".dux_out";
     private static final String[] STRACE_CALL = {
             "strace",
-            "-f",               // trace subprocesses as well
-            "-e", "trace=open",  // only check calls to open
-            "-o", TMP_FILE      // write to tmp file
+            "-f",                        // trace subprocesses as well
+            "-e", "trace=file,process",  // we care about calls to open or exec
+            "-o", TMP_FILE               // write to tmp file
     };
 
     private String[] args;
@@ -75,7 +75,7 @@ public class DuxBuildTracer {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 
         for (DuxStraceCall c : calls) {
-            if (!c.call.equals("open")) {
+            if (!c.call.equals("open") && !c.call.matches("exec.*")) {
                 continue;
             }
 
