@@ -92,9 +92,15 @@ public class DuxBuildTracer {
             if (fileHashes.containsKey(path)) {
                 continue;
             }
-
-            HashCode hash = hashFile(path);
-            fileHashes.put(path, hash);
+	    
+	    try {
+		HashCode hash = hashFile(path);
+		fileHashes.put(path, hash);
+	    }
+	    catch (FileNotFoundException e) {
+		// must be a file created and deleted during the build
+		continue;
+	    }
         }
     }
 
