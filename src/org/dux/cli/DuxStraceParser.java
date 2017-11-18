@@ -86,12 +86,11 @@ public class DuxStraceParser {
 	if (line.matches("\\d+.*")) {
 	    sanitized = sanitized.split("\\s+", 2)[1];
 	}
-	    
-        String[] values = sanitized.split("\\=");
-        assert (values.length == 2);
 
-        String lhs = values[0].trim();
-        String rhs = values[1].trim();
+	// split on rightmost equals sign (before return value)
+	int signIdx = sanitized.lastIndexOf('=');
+	String lhs = sanitized.substring(0, signIdx).trim();
+	String rhs = sanitized.substring(signIdx + 1).trim();
 
         // split LHS on open parenthesis: the call is to the left, the args are to the right
         String[] callTokens = lhs.split("\\(");
@@ -107,6 +106,6 @@ public class DuxStraceParser {
 	}
 
 	int returnValue = Integer.parseInt(rawReturn);
-        return new DuxStraceCall(call, args, returnValue);
+	return new DuxStraceCall(call, args, returnValue);
     }
 }
