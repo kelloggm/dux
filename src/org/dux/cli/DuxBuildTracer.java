@@ -27,9 +27,9 @@ public class DuxBuildTracer {
     private static final String TMP_FILE = ".dux_out";
     private static final String[] STRACE_CALL = {
             "strace",
-            "-f",               // trace subprocesses as well
-            "-e", "trace=open",  // only check calls to open
-            "-o", TMP_FILE      // write to tmp file
+            "-f",                        // trace subprocesses as well
+            "-e", "trace=file,process",  // we care about calls to open or exec
+            "-o", TMP_FILE               // write to tmp file
     };
 
     private String[] args;
@@ -75,39 +75,31 @@ public class DuxBuildTracer {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 
         for (DuxStraceCall c : calls) {
-
-            System.out.println(c);
-
-            if (!c.call.equals("open")) {
-                System.out.println("continuing because it's not an open");
+            if (!c.call.equals("open") && !c.call.matches("exec.*")) {
                 continue;
             }
 
             // disregard if return value unknown or indicated failure
             if (!c.knownReturn || c.returnValue == -1) {
-                System.out.println("continuing because failure");
                 continue;
             }
-
-            // don't hash if it's already present
-            if (fileHashes.containsKey(c.call)) {
-                System.out.println("continuing because hash already contains key");
-                continue;
-            }
-
-            System.out.println("doing things");
 
             // need to get first argument, which is absolute path surrounded in quotes
             String rawPath = c.args[0];
-
-            System.out.println("raw path: " + rawPath);
-
             String path = rawPath.substring(1, rawPath.length() - 1);
 
-            System.out.println("path: " + path);
+            // don't hash if it's already present
+            if (fileHashes.containsKey(path)) {
+                continue;
+            }
 
-            HashCode hash = hashFile(path);
-            fileHashes.put(path, hash);
+            try {
+                HashCode hash = hashFile(path);
+                fileHashes.put(path, hash);
+            } catch (FileNotFoundException e) {
+                // must be a file created and deleted during the build
+                continue;
+            }
         }
     }
 
@@ -118,8 +110,11 @@ public class DuxBuildTracer {
 
         try (FileInputStream fs = new FileInputStream(path)) {
             byte[] buf = new byte[FILE_BUF_SIZE];
-            while (fs.available() > 0) {
+            while (true) {
                 int len = fs.read(buf);
+                if (len == -1) {
+                    break;
+                }
                 hasher.putBytes(buf, 0, len);
             }
         }
