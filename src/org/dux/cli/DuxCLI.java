@@ -39,8 +39,9 @@ public class DuxCLI {
         } else {
             // A command was specified, so execute and trace it, and print the results to
             // the specified config file.
-            debugPrint("beginning trace of this program: " + options.command);
+            debugPrint("creating build tracer");
             DuxBuildTracer tracer = new DuxBuildTracer(Collections.singletonList(options.command));
+            debugPrint("beginning trace of this program: " + options.command);
             try {
                 tracer.trace();
             } catch (IOException ioe) {
