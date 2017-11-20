@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.dux.cli.DuxVerbosePrinter.debugPrint;
+
 /**
  * An object responsible for invoking the appropriate build tracer
  * and running the build tool. It parses the traced output and dumps
@@ -44,13 +46,15 @@ public class DuxBuildTracer {
     }
 
     public void trace() throws IOException, InterruptedException {
+        debugPrint("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
-
+        debugPrint("runtime acquired, executing program");
         Process proc = rt.exec(args);
+        debugPrint("waiting for build to terminate");
         proc.waitFor();
-
+        debugPrint("parsing strace file");
         parseStraceFile();
-
+        debugPrint("deleting strace file");
         // get rid of strace TMP file once we're done
         File f = new File(TMP_FILE);
         f.delete();

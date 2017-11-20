@@ -5,6 +5,8 @@ import com.google.devtools.common.options.OptionsParser;
 import java.io.IOException;
 import java.util.Collections;
 
+import static org.dux.cli.DuxVerbosePrinter.debugPrint;
+
 /**
  * The driver for the Dux build orchestration system.
  *
@@ -27,7 +29,7 @@ public class DuxCLI {
         }
 
         if (options.debug) {
-            DEBUG = true;
+            DuxVerbosePrinter.DEBUG = true;
         }
 
         if (options.command.equals("NOT SET")) {
@@ -68,12 +70,5 @@ public class DuxCLI {
         System.out.println("Usage: dux OPTIONS");
         System.out.println(parser.describeOptions(Collections.<String, String>emptyMap(),
                 OptionsParser.HelpVerbosity.LONG));
-    }
-
-    private static void debugPrint(String s) {
-        if (DEBUG) {
-            System.err.println("[DUX]: " + s);
-            System.err.flush();
-        }
     }
 }

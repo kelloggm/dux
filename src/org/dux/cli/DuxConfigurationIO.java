@@ -43,7 +43,7 @@ public class DuxConfigurationIO {
             out.writeObject(config);
             out.close();
             fileOut.close();
-            System.out.printf("Saved configuration to " + filePath);
+            DuxVerbosePrinter.debugPrint("saved configuration to " + filePath);
         } catch (IOException i) {
             i.printStackTrace();
         }
