@@ -133,10 +133,7 @@ public class DuxBuildTracer {
             while (true) {
                 int len = fs.read(buf);
                 if (len == -1) {
-                    debugPrint("finished hashing");
                     break;
-                } else {
-                    debugPrint("still hashing, len read: " + len);
                 }
                 hasher.putBytes(buf, 0, len);
             }
