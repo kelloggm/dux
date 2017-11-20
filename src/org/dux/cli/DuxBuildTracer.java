@@ -9,6 +9,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -96,10 +99,13 @@ public class DuxBuildTracer {
             String path = rawPath.substring(1, rawPath.length() - 1);
             debugPrint("got path: " + path);
 
-            // do not attempt to hash the terminal file. TODO: other special files to avoid?
-            if (path.equals("/dev/tty")) {
-                continue;
-            }
+	    // we only want to hash regular files
+	    Path p = Paths.get(path);
+	    debugPrint("checking if file is a regular file");
+	    if (!Files.isRegularFile(p)) {
+		debugPrint(p.toString() + " is not a regular file");
+		continue;
+	    }
 
             // don't hash if it's already present
             debugPrint("checking if file already hashed");
