@@ -69,6 +69,7 @@ public class DuxBuildTracer {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 
         for (DuxStraceCall c : calls) {
+            System.out.println(c);
             if (!c.call.equals("open") && !c.call.matches("exec.*")) {
                 continue;
             }
@@ -106,7 +107,6 @@ public class DuxBuildTracer {
             byte[] buf = new byte[FILE_BUF_SIZE];
             while (true) {
                 int len = fs.read(buf);
-                System.out.println("len: " + len);
                 if (len == -1) {
                     break;
                 }
