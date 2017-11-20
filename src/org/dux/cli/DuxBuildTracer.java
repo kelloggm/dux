@@ -96,6 +96,11 @@ public class DuxBuildTracer {
             String path = rawPath.substring(1, rawPath.length() - 1);
             debugPrint("got path: " + path);
 
+            // do not attempt to hash the terminal file. TODO: other special files to avoid?
+            if (path.equals("/dev/tty")) {
+                continue;
+            }
+
             // don't hash if it's already present
             debugPrint("checking if file already hashed");
             if (fileHashes.containsKey(path)) {
