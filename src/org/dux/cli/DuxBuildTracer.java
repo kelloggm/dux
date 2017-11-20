@@ -72,7 +72,11 @@ public class DuxBuildTracer {
     private void parseStraceFile() throws IOException, FileNotFoundException {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 
+        debugPrint("created strace call list");
+
         for (DuxStraceCall c : calls) {
+            debugPrint("recording a call: " + c);
+
             if (!c.call.equals("open") && !c.call.matches("exec.*")) {
                 continue;
             }

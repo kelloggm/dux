@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.dux.cli.DuxVerbosePrinter.debugPrint;
+
 /**
  * An object responsible for reading in an strace dump line by line and
  * extracting the calls.
@@ -22,10 +24,14 @@ public class DuxStraceParser {
 
         ArrayList<DuxStraceCall> calls = new ArrayList<>();
 
+        debugPrint("creating a file reader and a buffered reader");
+
         try (FileReader fr = new FileReader(path);
              BufferedReader br = new BufferedReader(fr)) {
             while (br.ready()) {
+                debugPrint("buffer is ready");
                 String line = br.readLine();
+                debugPrint("read this line: " + line);
                 DuxStraceCall call = parseLine(line);
                 if (call == null) {
                     continue;
@@ -72,25 +78,27 @@ public class DuxStraceParser {
     }
 
     private static @Nullable DuxStraceCall parseLine(String line) {
+        debugPrint("parsing this line: " + line);
+
         if (!line.matches(CALL_REGEX)) {
             return null;
         }
 
         // before the call, we may have "[PID ####]" or just a PID
-	// so get rid of it
+        // so get rid of it
         String sanitized = line;
         if (line.startsWith("[pid")) {
             int close = line.indexOf(']');
             sanitized = line.substring(close + 1);
         }
-	if (line.matches("\\d+.*")) {
-	    sanitized = sanitized.split("\\s+", 2)[1];
-	}
+        if (line.matches("\\d+.*")) {
+            sanitized = sanitized.split("\\s+", 2)[1];
+        }
 
-	// split on rightmost equals sign (before return value)
-	int signIdx = sanitized.lastIndexOf('=');
-	String lhs = sanitized.substring(0, signIdx).trim();
-	String rhs = sanitized.substring(signIdx + 1).trim();
+        // split on rightmost equals sign (before return value)
+        int signIdx = sanitized.lastIndexOf('=');
+        String lhs = sanitized.substring(0, signIdx).trim();
+        String rhs = sanitized.substring(signIdx + 1).trim();
 
         // split LHS on open parenthesis: the call is to the left, the args are to the right
         String[] callTokens = lhs.split("\\(");
@@ -101,11 +109,11 @@ public class DuxStraceParser {
 
         // there may be an errno after the return value; split on whitespace to ignore
         String rawReturn = rhs.split("\\s")[0];
-	if (rawReturn.equals("?")) {
-	    return new DuxStraceCall(call, args);
-	}
+        if (rawReturn.equals("?")) {
+            return new DuxStraceCall(call, args);
+        }
 
-	int returnValue = Integer.parseInt(rawReturn);
-	return new DuxStraceCall(call, args, returnValue);
+        int returnValue = Integer.parseInt(rawReturn);
+        return new DuxStraceCall(call, args, returnValue);
     }
 }
