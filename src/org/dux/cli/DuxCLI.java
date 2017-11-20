@@ -45,6 +45,8 @@ public class DuxCLI {
             DuxConfiguration config = new DuxConfiguration(displayName);
             tracer.dumpToConfiguration(config);
             DuxConfigurationIO.write(options.file, config);
+            System.out.println("Wrote configuration file: " + options.file);
+            return;
         }
     }
 

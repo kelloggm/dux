@@ -46,12 +46,6 @@ public class DuxBuildTracer {
     public void trace() throws IOException, InterruptedException {
         Runtime rt = Runtime.getRuntime();
 
-        System.out.println("execting:");
-        for (String s : args) {
-            System.out.print(s + " ");
-        }
-        System.out.println();
-
         Process proc = rt.exec(args);
         proc.waitFor();
 
@@ -59,7 +53,7 @@ public class DuxBuildTracer {
 
         // get rid of strace TMP file once we're done
         File f = new File(TMP_FILE);
-        //f.delete();
+        f.delete();
     }
 
     public void dumpToConfiguration(DuxConfiguration config) {
@@ -112,6 +106,7 @@ public class DuxBuildTracer {
             byte[] buf = new byte[FILE_BUF_SIZE];
             while (true) {
                 int len = fs.read(buf);
+                System.out.println("len: " + len);
                 if (len == -1) {
                     break;
                 }
