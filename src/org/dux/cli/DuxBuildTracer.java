@@ -77,24 +77,32 @@ public class DuxBuildTracer {
         for (DuxStraceCall c : calls) {
             debugPrint("recording a call: " + c);
 
+            // disregard everything but open and exec calls, for now
+            debugPrint("checking if the call is an open or exec");
             if (!c.call.equals("open") && !c.call.matches("exec.*")) {
                 continue;
             }
 
             // disregard if return value unknown or indicated failure
+            debugPrint("checking if the call succeeded");
             if (!c.knownReturn || c.returnValue == -1) {
                 continue;
             }
 
             // need to get first argument, which is absolute path surrounded in quotes
+            debugPrint("getting rawpath");
             String rawPath = c.args[0];
+            debugPrint("getting path from this rawpath: " + rawPath);
             String path = rawPath.substring(1, rawPath.length() - 1);
+            debugPrint("got path: " + path);
 
             // don't hash if it's already present
+            debugPrint("checking if file already hashed");
             if (fileHashes.containsKey(path)) {
                 continue;
             }
 
+            debugPrint("generating hash");
             try {
                 HashCode hash = hashFile(path);
                 fileHashes.put(path, hash);
@@ -109,6 +117,9 @@ public class DuxBuildTracer {
 
     private static HashCode hashFile(String path)
             throws IOException, FileNotFoundException {
+
+        debugPrint("hashing this path: " + path);
+
         HashFunction hf = Hashing.sha256();
         Hasher hasher = hf.newHasher();
 
@@ -117,12 +128,16 @@ public class DuxBuildTracer {
             while (true) {
                 int len = fs.read(buf);
                 if (len == -1) {
+                    debugPrint("finished hashing");
                     break;
+                } else {
+                    debugPrint("still hashing, len read: " + len);
                 }
                 hasher.putBytes(buf, 0, len);
             }
         }
 
+        debugPrint("hashing complete for path: " + path);
         return hasher.hash();
     }
 }

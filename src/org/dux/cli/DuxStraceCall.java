@@ -14,14 +14,14 @@ public class DuxStraceCall {
     public DuxStraceCall(String call, String[] args, int returnValue) {
         this.call = call;
         this.args = Arrays.<String>copyOf(args, args.length);
-	this.knownReturn = true;
+        this.knownReturn = true;
         this.returnValue = returnValue;
     }
 
     public DuxStraceCall(String call, String[] args) {
-	this.call = call;
+        this.call = call;
         this.args = Arrays.<String>copyOf(args, args.length);
-	this.knownReturn = false;
+        this.knownReturn = false;
         this.returnValue = 0;
     }
 
@@ -30,7 +30,7 @@ public class DuxStraceCall {
         return "DuxStraceCall{"
                 + "call=\"" + call + "\", "
                 + "args=\"" + Arrays.toString(args) + "\", "
-	        + "knownReturn=" + knownReturn + ", "
+                + "knownReturn=" + knownReturn + ", "
                 + "returnValue=" + returnValue + "}";
     }
 }
