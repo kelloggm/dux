@@ -69,7 +69,6 @@ public class DuxBuildTracer {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 
         for (DuxStraceCall c : calls) {
-            System.out.println(c);
             if (!c.call.equals("open") && !c.call.matches("exec.*")) {
                 continue;
             }

@@ -13,6 +13,9 @@ import java.util.Collections;
  * To invoke it, run "java Dux [options]"
  */
 public class DuxCLI {
+
+    private static boolean DEBUG = false;
+
     public static void main(String[] args) {
         OptionsParser parser = OptionsParser.newOptionsParser(DuxOptions.class);
         parser.parseAndExitUponError(args);
@@ -23,14 +26,20 @@ public class DuxCLI {
             return;
         }
 
+        if (options.debug) {
+            DEBUG = true;
+        }
+
         if (options.command.equals("NOT SET")) {
             // This means no command was specified. Read and print the specified dux file.
+            debugPrint("reading configuration file: " + options.file);
             DuxConfiguration config = DuxConfigurationIO.read(options.file);
             System.out.println(config);
             return;
         } else {
             // A command was specified, so execute and trace it, and print the results to
             // the specified config file.
+            debugPrint("beginning trace of this program: " + options.command);
             DuxBuildTracer tracer = new DuxBuildTracer(Collections.singletonList(options.command));
             try {
                 tracer.trace();
@@ -41,11 +50,15 @@ public class DuxCLI {
                 ie.printStackTrace();
                 return;
             }
+            debugPrint("tracing complete");
             String displayName = options.displayName.equals("NOT SET") ? null : options.displayName;
+            debugPrint("display name computed: " + displayName);
             DuxConfiguration config = new DuxConfiguration(displayName);
+            debugPrint("new configuration created");
             tracer.dumpToConfiguration(config);
+            debugPrint("finished dumping trace to configuration");
             DuxConfigurationIO.write(options.file, config);
-            System.out.println("Wrote configuration file: " + options.file);
+            debugPrint("wrote configuration file: " + options.file);
             return;
         }
     }
@@ -54,5 +67,12 @@ public class DuxCLI {
         System.out.println("Usage: dux OPTIONS");
         System.out.println(parser.describeOptions(Collections.<String, String>emptyMap(),
                 OptionsParser.HelpVerbosity.LONG));
+    }
+
+    private static void debugPrint(String s) {
+        if (DEBUG) {
+            System.err.println("[DUX]: " + s);
+            System.err.flush();
+        }
     }
 }

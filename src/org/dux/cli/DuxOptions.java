@@ -17,6 +17,14 @@ public class DuxOptions extends OptionsBase {
     public boolean help;
 
     @Option(
+            name = "verbose",
+            abbrev = 'v',
+            help = "Enable debuggin mode. Prints to stderr.",
+            defaultValue = "false"
+    )
+    public boolean debug;
+
+    @Option(
             name = "command",
             abbrev = 'c',
             help = "The command to trace.",
