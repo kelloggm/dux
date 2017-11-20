@@ -103,6 +103,8 @@ public class DuxBuildTracer {
                 continue;
             }
         }
+
+        debugPrint("completed recording of calls");
     }
 
     private static HashCode hashFile(String path)
