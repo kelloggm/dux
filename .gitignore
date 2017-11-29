@@ -236,3 +236,5 @@ TSWLatexianTemp*
 /bazel-*
 # Ignore outputs generated during Bazel bootstrapping.
 /output/
+
+GOOGLE_APPLICATION_CREDENTIALS
