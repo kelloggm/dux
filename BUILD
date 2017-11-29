@@ -5,5 +5,4 @@ java_binary(
             "@org_checkerframework_checker_qual//jar",
             "@com_google_guava_guava//jar"],
     srcs = glob(["src/org/dux/cli/*.java"]),
-    jvm_flags = ["-DGOOGLE_APPLICATION_CREDENTIALS=credentials/duxserver-74f9ff868003.json"],
 )
