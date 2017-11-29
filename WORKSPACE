@@ -14,3 +14,8 @@ maven_jar(
     name = "org_checkerframework_checker_qual",
     artifact = "org.checkerframework:checker-qual:2.2.2",
 )
+
+maven_jar(
+    name = "com_google_cloud_storage",
+    artifact = "com.google.cloud:google-cloud-storage:1.12.0",
+)
