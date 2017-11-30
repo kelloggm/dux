@@ -238,3 +238,7 @@ TSWLatexianTemp*
 /output/
 
 GOOGLE_APPLICATION_CREDENTIALS
+
+# application-specific
+# ignore strace temp file
+/.dux_out
