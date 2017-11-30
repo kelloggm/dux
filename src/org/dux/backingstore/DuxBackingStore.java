@@ -10,18 +10,16 @@ public interface DuxBackingStore {
     /**
      * Fetches the file hashed by key from server, and places it at target
      * @param key a hash into a dux server
-     * @param server an identifier for the server to fetch from. Format is implementation dependent.
      * @param target the path to which the downloaded file should be saved
      * @return whether the fetch succeeded
      */
-    boolean fetchFile(String key, String server, String target);
+    boolean fetchFile(String key, String target);
 
     /**
      * Stores the file located at filePath under the key on server
      * @param key a key into a dux server. Must be a hash of filePath
-     * @param server a dux server. Format is implementation dependent.
      * @param filePath the path from which the file should be read
      * @return whether the store succeeded
      */
-    boolean storeFile(String key, String server, String filePath);
+    boolean storeFile(String key, String filePath);
 }

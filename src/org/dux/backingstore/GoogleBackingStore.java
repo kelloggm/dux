@@ -48,19 +48,13 @@ public class GoogleBackingStore implements DuxBackingStore {
      * documentation at https://cloud.google.com/storage/docs/object-basics
      *
      * @param key    a hash into a dux server
-     * @param server the name of the Google Cloud Storage bucket to read from. Credentials must
-     *               be available to access the requested bucket - see /credentials/README.
      * @param target the path to which the downloaded file should be saved
      * @return whether the fetch succeeded
      */
     @Override
-    public boolean fetchFile(String key, String server, String target) {
+    public boolean fetchFile(String key, String target) {
         DuxVerbosePrinter.debugPrint("Fetching hash " + key + " from Google Cloud Storage");
-        if (!server.equals(BUCKET_NAME)) {
-            DuxVerbosePrinter.debugPrint("only supports one bucket for prototype. Please pass " + BUCKET_NAME + " as the server parameter.");
-            return false;
-        }
-        Blob blob = storage.get(BlobId.of(key, server, null));
+        Blob blob = storage.get(BlobId.of(key, BUCKET_NAME, null));
         if (blob == null) {
             DuxVerbosePrinter.debugPrint("GCS reports it could not find the file");
             return false;
@@ -106,21 +100,15 @@ public class GoogleBackingStore implements DuxBackingStore {
      * Stores the file located at filePath under the key on server
      *
      * @param key      a key into a dux server. Must be a hash of filePath
-     * @param server the name of the Google Cloud Storage bucket to read from. Credentials must
-     *               be available to access the requested bucket - see /credentials/README.
      * @param filePath the path from which the file should be read
      * @return whether the store succeeded
      */
     @Override
-    public boolean storeFile(String key, String server, String filePath) {
-        if (!server.equals(BUCKET_NAME)) {
-            DuxVerbosePrinter.debugPrint("only supports one bucket for prototype. Please pass " + BUCKET_NAME + " as the server parameter.");
-            return false;
-        }
+    public boolean storeFile(String key, String filePath) {
         DuxVerbosePrinter.debugPrint("Storing file " + filePath + " in Google Cloud Storage");
         try {
             InputStream fileInputStream = new FileInputStream(filePath);
-            Bucket bucket = storage.get(server);
+            Bucket bucket = storage.get(BUCKET_NAME);
             bucket.create(key, fileInputStream);
             DuxVerbosePrinter.debugPrint("file stored successfully");
             return true;

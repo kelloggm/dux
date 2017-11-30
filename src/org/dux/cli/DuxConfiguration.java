@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.dux.backingstore.DuxBackingStore;
 
 /**
  * An object representing a Dux configuration file.
@@ -30,8 +31,24 @@ public class DuxConfiguration implements Serializable {
         this.entries = new ArrayList<>();
     }
 
+    /**
+     * Adds {@code entry} to this configuration
+     */
     public void add(final DuxConfigurationEntry entry) {
         entries.add(entry);
+    }
+
+    /**
+     * Sends all configuration entry to the backing store. Does not filter.
+     * @param store a backing store, such as a google cloud storage bucket
+     * @return whether all entries were successfully stored
+     */
+    public boolean sendToBackingStore(DuxBackingStore store) {
+        boolean allSucceeded = true;
+        for(DuxConfigurationEntry entry : entries) {
+            allSucceeded &= entry.sendToBackingStore(store);
+        }
+        return allSucceeded;
     }
 
     @Override

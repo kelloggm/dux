@@ -67,6 +67,12 @@ public class DuxCLI {
             debugPrint("new configuration created");
             tracer.dumpToConfiguration(config);
             debugPrint("finished dumping trace to configuration");
+            boolean result = config.sendToBackingStore(backingStore);
+            if (result) {
+                debugPrint("finished sending to backing store");
+            } else {
+                debugPrint("at least one send failed. See the log.");
+            }
             DuxConfigurationIO.write(options.file, config);
             debugPrint("wrote configuration file: " + options.file);
             return;
