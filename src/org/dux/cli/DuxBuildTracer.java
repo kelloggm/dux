@@ -74,6 +74,7 @@ public class DuxBuildTracer {
 
     private void parseStraceFile() throws IOException, FileNotFoundException {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
+	Path currentDir = Paths.get(".").toAbsolutePath().normalize();
 
         debugPrint("created strace call list");
 
@@ -100,11 +101,23 @@ public class DuxBuildTracer {
             debugPrint("got path: " + path);
 
 	    // we only want to hash regular files
-	    Path p = Paths.get(path);
+	    Path p = Paths.get(path).normalize();
 	    debugPrint("checking if file is a regular file");
 	    if (!Files.isRegularFile(p)) {
 		debugPrint(p.toString() + " is not a regular file");
 		continue;
+	    }
+
+	    // we want to relativize the path if it seems like it could be user-specific
+	    // (don't want absolute paths to go down user-specific directories if another
+	    //  user might run the build with the same directory structure)
+	    // Probably some cases where this is insufficient but it's a start
+
+	    // Min prefix length of 1 ==> they share a prefix that isn't root
+	    debugPrint("checking if file shares prefix with the current working directory");
+	    if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
+		debugPrint(p.toString() + "shares prefix with the current directory");
+		p = p.relativize(currentDir).normalize();
 	    }
 
             // don't hash if it's already present
@@ -147,5 +160,31 @@ public class DuxBuildTracer {
 
         debugPrint("hashing complete for path: " + path);
         return hasher.hash();
+    }
+
+    private static boolean pathsSharePrefix(Path p1, Path p2, int minPrefixLength) {
+	Path absolute1 = p1.toAbsolutePath().normalize();
+	Path absolute2 = p2.toAbsolutePath().normalize();
+
+	int nameCount1 = absolute1.getNameCount();
+	int nameCount2 = absolute2.getNameCount();
+
+	int indices = Math.min(nameCount1, nameCount2);
+	// paths too short
+	if (indices < minPrefixLength) {
+	    return false;
+	}
+
+	int sharedPrefixLength = 0;
+	for (int i = 0; i < indices; i++) {
+	    Path elt1 = absolute1.getName(i);
+	    Path elt2 = absolute2.getName(i);
+	    if (!elt1.equals(elt2)) {
+		break;
+	    }
+	    sharedPrefixLength++;
+	}
+	
+	return sharedPrefixLength >= minPrefixLength;
     }
 }
