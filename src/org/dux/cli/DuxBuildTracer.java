@@ -38,14 +38,14 @@ public class DuxBuildTracer {
     };
 
     private String[] args;
-    private Map<String, HashCode> fileHashes;
+    private Map<Path, HashCode> fileHashes;
 
     public DuxBuildTracer(List<String> args) {
         ArrayList<String> argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
         argList.addAll(args);
         this.args = argList.toArray(new String[0]);
 
-        fileHashes = new HashMap<String, HashCode>();
+        fileHashes = new HashMap<Path, HashCode>();
     }
 
     public void trace() throws IOException, InterruptedException {
@@ -64,11 +64,11 @@ public class DuxBuildTracer {
     }
 
     public void dumpToConfiguration(DuxConfiguration config) {
-        for (Map.Entry<String, HashCode> entry : fileHashes.entrySet()) {
-            String path = entry.getKey();
+        for (Map.Entry<Path, HashCode> entry : fileHashes.entrySet()) {
+            Path p = entry.getKey();
             HashCode hash = entry.getValue();
-            File f = new File(path);
-            config.add(new DuxConfigurationEntry(path, hash, false, f));
+            File f = p.toFile();
+            config.add(new DuxConfigurationEntry(p.toString(), hash, !p.isAbsolute(), f));
         }
     }
 
@@ -109,14 +109,14 @@ public class DuxBuildTracer {
 
             // don't hash if it's already present
             debugPrint("checking if file already hashed");
-            if (fileHashes.containsKey(path)) {
+            if (fileHashes.containsKey(p)) {
                 continue;
             }
 
             debugPrint("generating hash");
             try {
                 HashCode hash = hashFile(path);
-                fileHashes.put(path, hash);
+                fileHashes.put(p, hash);
             } catch (FileNotFoundException e) {
                 // must be a file created and deleted during the build
                 continue;
