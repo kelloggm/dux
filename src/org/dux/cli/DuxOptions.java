@@ -47,4 +47,20 @@ public class DuxOptions extends OptionsBase {
             defaultValue = "build.dux"
     )
     public String file;
+
+    @Option(
+            name = "store",
+            abbrev = 's',
+            help = "The type of backing store in use. Must be one of: google",
+            defaultValue = "google"
+    )
+    public String storeType;
+
+    @Option(
+            name = "bucket",
+            abbrev = 'b',
+            help = "If using a google cloud backing store (-s google), the name of the bucket to upload/download to/from.",
+            defaultValue = "duxserver-test0"
+    )
+    public String bucketName;
 }

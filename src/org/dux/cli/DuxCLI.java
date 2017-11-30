@@ -1,6 +1,8 @@
 package org.dux.cli;
 
 import com.google.devtools.common.options.OptionsParser;
+import org.dux.backingstore.DuxBackingStore;
+import org.dux.backingstore.DuxBackingStoreBuilder;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -31,6 +33,11 @@ public class DuxCLI {
         if (options.debug) {
             DuxVerbosePrinter.DEBUG = true;
         }
+
+        DuxBackingStore backingStore = new DuxBackingStoreBuilder()
+                .type(options.storeType)
+                .bucket(options.bucketName)
+                .build();
 
         if (options.command.equals("NOT SET")) {
             // This means no command was specified. Read and print the specified dux file.

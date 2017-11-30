@@ -19,3 +19,8 @@ maven_jar(
     name = "com_google_cloud_storage",
     artifact = "com.google.cloud:google-cloud-storage:1.12.0",
 )
+
+maven_jar(
+    name = "com_google_cloud_core",
+    artifact = "com.google.cloud:google-cloud-core:1.12.0",
+)
