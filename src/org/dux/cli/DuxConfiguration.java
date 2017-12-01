@@ -3,6 +3,7 @@ package org.dux.cli;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -20,7 +21,8 @@ import org.dux.backingstore.DuxBackingStore;
  * as the project name (optional), and information
  * about when it was created.
  */
-public class DuxConfiguration implements Serializable {
+public class DuxConfiguration implements Serializable, 
+                                         Iterable<DuxConfigurationEntry> {
     @Nullable final String projectName;
     final ZonedDateTime creationTime;
     final List<DuxConfigurationEntry> entries;
@@ -49,6 +51,13 @@ public class DuxConfiguration implements Serializable {
             allSucceeded &= entry.sendToBackingStore(store);
         }
         return allSucceeded;
+    }
+
+    /**
+     * Iterator over underlying entries
+     */
+    public Iterator<DuxConfigurationEntry> iterator() {
+	return entries.iterator();
     }
 
     @Override
