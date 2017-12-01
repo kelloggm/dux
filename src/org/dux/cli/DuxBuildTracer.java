@@ -1,12 +1,8 @@
 package org.dux.cli;
 
 import com.google.common.hash.HashCode;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.Hashing;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.dux.cli.DuxFileHasher.hashFile;
 import static org.dux.cli.DuxVerbosePrinter.debugPrint;
 
 /**
@@ -28,7 +25,6 @@ import static org.dux.cli.DuxVerbosePrinter.debugPrint;
  * Currently depends on having strace available
  */
 public class DuxBuildTracer {
-    private static final int FILE_BUF_SIZE = 1024;
     private static final String TMP_FILE = ".dux_out";
     private static final String[] STRACE_CALL = {
             "strace",
@@ -137,29 +133,6 @@ public class DuxBuildTracer {
         }
 
         debugPrint("completed recording of calls");
-    }
-
-    private static HashCode hashFile(String path)
-            throws IOException, FileNotFoundException {
-
-        debugPrint("hashing this path: " + path);
-
-        HashFunction hf = Hashing.sha256();
-        Hasher hasher = hf.newHasher();
-
-        try (FileInputStream fs = new FileInputStream(path)) {
-            byte[] buf = new byte[FILE_BUF_SIZE];
-            while (true) {
-                int len = fs.read(buf);
-                if (len == -1) {
-                    break;
-                }
-                hasher.putBytes(buf, 0, len);
-            }
-        }
-
-        debugPrint("hashing complete for path: " + path);
-        return hasher.hash();
     }
 
     private static boolean pathsSharePrefix(Path p1, Path p2, int minPrefixLength) {
