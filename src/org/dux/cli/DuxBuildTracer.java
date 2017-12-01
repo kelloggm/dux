@@ -117,7 +117,7 @@ public class DuxBuildTracer {
 	    debugPrint("checking if file shares prefix with the current working directory");
 	    if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
 		debugPrint(p.toString() + "shares prefix with the current directory");
-		p = p.relativize(currentDir).normalize();
+		p = currentDir.relativize(p).normalize();
 	    }
 
             // don't hash if it's already present
