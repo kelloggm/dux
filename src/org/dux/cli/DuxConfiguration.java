@@ -13,17 +13,18 @@ import org.dux.backingstore.DuxBackingStore;
  * An object representing a Dux configuration file.
  * These files are stored as binary objects, and so
  * must implement java.io.Serializable.
- *
+ * <p>
  * Each DuxConfiguration contains the information
  * about dependencies needed to build a project.
- *
+ * <p>
  * DuxConfiguration_s also include metadata, such
  * as the project name (optional), and information
  * about when it was created.
  */
-public class DuxConfiguration implements Serializable, 
-                                         Iterable<DuxConfigurationEntry> {
-    @Nullable final String projectName;
+public class DuxConfiguration implements Serializable,
+        Iterable<DuxConfigurationEntry> {
+    @Nullable
+    final String projectName;
     final ZonedDateTime creationTime;
     final List<DuxConfigurationEntry> entries;
 
@@ -42,12 +43,13 @@ public class DuxConfiguration implements Serializable,
 
     /**
      * Sends all configuration entry to the backing store. Does not filter.
+     *
      * @param store a backing store, such as a google cloud storage bucket
      * @return whether all entries were successfully stored
      */
     public boolean sendToBackingStore(DuxBackingStore store) {
         boolean allSucceeded = true;
-        for(DuxConfigurationEntry entry : entries) {
+        for (DuxConfigurationEntry entry : entries) {
             allSucceeded &= entry.sendToBackingStore(store);
         }
         return allSucceeded;
@@ -57,7 +59,7 @@ public class DuxConfiguration implements Serializable,
      * Iterator over underlying entries
      */
     public Iterator<DuxConfigurationEntry> iterator() {
-	return entries.iterator();
+        return entries.iterator();
     }
 
     @Override
