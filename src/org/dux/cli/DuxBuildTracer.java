@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.dux.cli.DuxFileHasher.hashFile;
-import static org.dux.cli.DuxVerbosePrinter.debugPrint;
 
 /**
  * An object responsible for invoking the appropriate build tracer
@@ -45,15 +44,15 @@ public class DuxBuildTracer {
     }
 
     public void trace() throws IOException, InterruptedException {
-        debugPrint("beginning a trace, getting runtime");
+        DuxCLI.logger.debug("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
-        debugPrint("runtime acquired, executing program");
+        DuxCLI.logger.debug("runtime acquired, executing program");
         Process proc = rt.exec(args);
-        debugPrint("waiting for build to terminate");
+        DuxCLI.logger.debug("waiting for build to terminate");
         proc.waitFor();
-        debugPrint("parsing strace file");
+        DuxCLI.logger.debug("parsing strace file");
         parseStraceFile();
-        debugPrint("deleting strace file");
+        DuxCLI.logger.debug("deleting strace file");
         // get rid of strace TMP file once we're done
         File f = new File(TMP_FILE);
         f.delete();
@@ -72,35 +71,35 @@ public class DuxBuildTracer {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
 	Path currentDir = Paths.get(".").toAbsolutePath().normalize();
 
-        debugPrint("created strace call list");
+        DuxCLI.logger.debug("created strace call list");
 
         for (DuxStraceCall c : calls) {
-            debugPrint("recording a call: " + c);
+            DuxCLI.logger.debug("recording a call: {}", c);
 
             // disregard everything but open and exec calls, for now
-            debugPrint("checking if the call is an open or exec");
+            DuxCLI.logger.debug("checking if the call is an open or exec");
             if (!c.call.equals("open") && !c.call.matches("exec.*")) {
                 continue;
             }
 
             // disregard if return value unknown or indicated failure
-            debugPrint("checking if the call succeeded");
+            DuxCLI.logger.debug("checking if the call succeeded");
             if (!c.knownReturn || c.returnValue == -1) {
                 continue;
             }
 
             // need to get first argument, which is absolute path surrounded in quotes
-            debugPrint("getting rawpath");
+            DuxCLI.logger.debug("getting rawpath");
             String rawPath = c.args[0];
-            debugPrint("getting path from this rawpath: " + rawPath);
+            DuxCLI.logger.debug("getting path from this rawpath: {}", rawPath);
             String path = rawPath.substring(1, rawPath.length() - 1);
-            debugPrint("got path: " + path);
+            DuxCLI.logger.debug("got path: {}", path);
 
 	    // we only want to hash regular files
 	    Path p = Paths.get(path).normalize();
-	    debugPrint("checking if file is a regular file");
+	    DuxCLI.logger.debug("checking if file is a regular file");
 	    if (!Files.isRegularFile(p)) {
-		debugPrint(p.toString() + " is not a regular file");
+		DuxCLI.logger.debug("{} is not a regular file", p.toString());
 		continue;
 	    }
 
@@ -110,19 +109,19 @@ public class DuxBuildTracer {
 	    // Probably some cases where this is insufficient but it's a start
 
 	    // Min prefix length of 1 ==> they share a prefix that isn't root
-	    debugPrint("checking if file shares prefix with the current working directory");
+	    DuxCLI.logger.debug("checking if file shares prefix with the current working directory");
 	    if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
-		debugPrint(p.toString() + "shares prefix with the current directory");
+		DuxCLI.logger.debug("{} shares prefix with the current directory", p.toString());
 		p = currentDir.relativize(p).normalize();
 	    }
 
             // don't hash if it's already present
-            debugPrint("checking if file already hashed");
+            DuxCLI.logger.debug("checking if file already hashed");
             if (fileHashes.containsKey(p)) {
                 continue;
             }
 
-            debugPrint("generating hash");
+            DuxCLI.logger.debug("generating hash");
             try {
                 HashCode hash = hashFile(path);
                 fileHashes.put(p, hash);
@@ -132,7 +131,7 @@ public class DuxBuildTracer {
             }
         }
 
-        debugPrint("completed recording of calls");
+        DuxCLI.logger.debug("completed recording of calls");
     }
 
     private static boolean pathsSharePrefix(Path p1, Path p2, int minPrefixLength) {

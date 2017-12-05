@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.dux.cli.DuxVerbosePrinter.debugPrint;
-
 /**
  * An object responsible for reading in an strace dump line by line and
  * extracting the calls.
@@ -24,14 +22,14 @@ public class DuxStraceParser {
 
         ArrayList<DuxStraceCall> calls = new ArrayList<>();
 
-        debugPrint("creating a file reader and a buffered reader");
+        DuxCLI.logger.debug("creating a file reader and a buffered reader");
 
         try (FileReader fr = new FileReader(path);
              BufferedReader br = new BufferedReader(fr)) {
             while (br.ready()) {
-                debugPrint("buffer is ready");
+                DuxCLI.logger.debug("buffer is ready");
                 String line = br.readLine();
-                debugPrint("read this line: " + line);
+                DuxCLI.logger.debug("read this line: {}", line);
                 DuxStraceCall call = parseLine(line);
                 if (call == null) {
                     continue;
@@ -78,7 +76,7 @@ public class DuxStraceParser {
     }
 
     private static @Nullable DuxStraceCall parseLine(String line) {
-        debugPrint("parsing this line: " + line);
+        DuxCLI.logger.debug("parsing this line: {}", line);
 
         if (!line.matches(CALL_REGEX)) {
             return null;

@@ -1,13 +1,14 @@
 package org.dux.cli;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.google.devtools.common.options.OptionsParser;
 import org.dux.backingstore.DuxBackingStore;
 import org.dux.backingstore.DuxBackingStoreBuilder;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
-
-import static org.dux.cli.DuxVerbosePrinter.debugPrint;
 
 /**
  * The driver for the Dux build orchestration system.
@@ -18,20 +19,19 @@ import static org.dux.cli.DuxVerbosePrinter.debugPrint;
  */
 public class DuxCLI {
 
-    private static boolean DEBUG = false;
+    public static Logger logger;
 
     public static void main(String[] args) {
         OptionsParser parser = OptionsParser.newOptionsParser(DuxOptions.class);
         parser.parseAndExitUponError(args);
         DuxOptions options = parser.getOptions(DuxOptions.class);
 
+        logger = (Logger)LoggerFactory.getLogger(DuxCLI.class);
+        logger.setLevel(Level.toLevel(options.level));
+
         if (options.help) {
             printUsage(parser);
             return;
-        }
-
-        if (options.debug) {
-            DuxVerbosePrinter.DEBUG = true;
         }
 
         DuxBackingStore backingStore = new DuxBackingStoreBuilder()
@@ -41,16 +41,16 @@ public class DuxCLI {
 
         if (options.command.equals("NOT SET")) {
             // This means no command was specified. Read and print the specified dux file.
-            debugPrint("reading configuration file: " + options.file);
+            logger.debug("reading configuration file: {}", options.file);
             DuxConfiguration config = DuxConfigurationIO.read(options.file);
             System.out.println(config);
             return;
         } else {
             // A command was specified, so execute and trace it, and print the results to
             // the specified config file.
-            debugPrint("creating build tracer");
+            logger.debug("creating build tracer");
             DuxBuildTracer tracer = new DuxBuildTracer(Collections.singletonList(options.command));
-            debugPrint("beginning trace of this program: " + options.command);
+            logger.debug("beginning trace of this program: {}", options.command);
             try {
                 tracer.trace();
             } catch (IOException ioe) {
@@ -60,28 +60,28 @@ public class DuxCLI {
                 ie.printStackTrace();
                 return;
             }
-            debugPrint("tracing complete");
+            logger.debug("tracing complete");
             String displayName = options.displayName.equals("NOT SET") ? null : options.displayName;
-            debugPrint("display name computed: " + displayName);
+            logger.debug("display name computed: {}", displayName);
             DuxConfiguration config = new DuxConfiguration(displayName);
-            debugPrint("new configuration created");
+            logger.debug("new configuration created");
             tracer.dumpToConfiguration(config);
-            debugPrint("finished dumping trace to configuration");
+            logger.debug("finished dumping trace to configuration");
             boolean result = config.sendToBackingStore(backingStore);
             if (result) {
-                debugPrint("finished sending to backing store");
+                logger.debug("finished sending to backing store");
             } else {
-                debugPrint("at least one send failed. See the log.");
+                logger.debug("at least one send failed. See the log.");
             }
             DuxConfigurationIO.write(options.file, config);
-            debugPrint("wrote configuration file: " + options.file);
+            logger.debug("wrote configuration file: {}", options.file);
             return;
         }
     }
 
     private static void printUsage(OptionsParser parser) {
-        System.out.println("Usage: dux OPTIONS");
-        System.out.println(parser.describeOptions(Collections.<String, String>emptyMap(),
+        logger.info("Usage: dux OPTIONS");
+        logger.info(parser.describeOptions(Collections.<String, String>emptyMap(),
                 OptionsParser.HelpVerbosity.LONG));
     }
 }

@@ -9,8 +9,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import static org.dux.cli.DuxVerbosePrinter.debugPrint;
-
 /**
  * Class that implements shared code for hashing a file for use in
  * both tracing builds and checking configurations
@@ -21,7 +19,7 @@ public class DuxFileHasher {
     public static HashCode hashFile(String path)
             throws IOException, FileNotFoundException {
 
-        debugPrint("hashing this path: " + path);
+        DuxCLI.logger.debug("hashing this path: {}", path);
 
         HashFunction hf = Hashing.sha256();
         Hasher hasher = hf.newHasher();
@@ -37,7 +35,7 @@ public class DuxFileHasher {
             }
         }
 
-        debugPrint("hashing complete for path: " + path);
+        DuxCLI.logger.debug("hashing complete for path: {}", path);
         return hasher.hash();
     }
 }

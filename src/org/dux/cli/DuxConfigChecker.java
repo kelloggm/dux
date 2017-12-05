@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import static org.dux.cli.DuxFileHasher.hashFile;
-import static org.dux.cli.DuxVerbosePrinter.debugPrint;
 
 /**
  * An object responsible for checking the current system against
@@ -38,32 +37,28 @@ public class DuxConfigChecker {
         for (DuxConfigurationEntry entry : config) {
             ;
             // file does not exist,
-            debugPrint("Checking if file " + entry.path.toString() + " exists");
+            DuxCLI.logger.debug("Checking if file {} exists", entry.path.toString());
             if (!entry.path.exists()) {
-                debugPrint("File " + entry.path.toString() + " does not exist, pulling");
+                DuxCLI.logger.debug("File {} does not exist, pulling", entry.path.toString());
                 if (!store.fetchFile(entry.hashCode.toString(),
                         entry.path.toString())) {
-                    debugPrint("Failed to download entry " + entry.hashCode.toString()
-                            + " to location " + entry.path);
+                    DuxCLI.logger.error("Failed to download entry {} to location {}", entry.hashCode.toString(), entry.path);
                     throw new FileNotFoundException(entry.hashCode.toString());
                 }
-                debugPrint("Successfully fetched file " + entry.path.toString());
+                DuxCLI.logger.debug("Successfully fetched file {}", entry.path.toString());
                 continue;
             }
 
             // file exists so let's compare the hash code to the entry's
-            debugPrint("Computing hash for " + entry.path);
+            DuxCLI.logger.debug("Computing hash for {}", entry.path);
             HashCode hash = hashFile(entry.path.toString());
             if (!hash.equals(entry.hashCode)) {
-                debugPrint("Hash does not match, printing a warning");
-                System.out.println("Warning: Hash for " + entry.path.toString()
-                        + " does not match stored config."
-                        + "\nExpected: " + entry.hashCode.toString()
-                        + "\nObtained: " + hash.toString());
+                DuxCLI.logger.debug("Hash does not match, printing a warning");
+                DuxCLI.logger.warn("Hash for {} does not match stored config.\nExpected: {}\nObtained: {}", entry.path.toString(), entry.hashCode.toString(), hash.toString());
                 continue;
             }
 
-            debugPrint(entry.path.toString() + " exists and hash matches");
+            DuxCLI.logger.debug("{} exists and hash matches", entry.path.toString());
         }
     }
 }

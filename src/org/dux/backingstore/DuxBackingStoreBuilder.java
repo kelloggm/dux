@@ -1,6 +1,6 @@
 package org.dux.backingstore;
 
-import org.dux.cli.DuxVerbosePrinter;
+import org.dux.cli.DuxCLI;
 
 /**
  * A builder for DuxBackingStore_s
@@ -29,7 +29,7 @@ public class DuxBackingStoreBuilder {
         switch (type) {
             case GOOGLE_CLOUD_STORAGE:
                 if (bucket == null) {
-                    DuxVerbosePrinter.debugPrint("tried to build a google backing store without specifying a bucket!");
+                    DuxCLI.logger.error("tried to build a google backing store without specifying a bucket!");
                     return null;
                 }
                 return new GoogleBackingStore(bucket);

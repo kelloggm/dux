@@ -17,12 +17,12 @@ public class DuxOptions extends OptionsBase {
     public boolean help;
 
     @Option(
-            name = "verbose",
+            name = "level",
             abbrev = 'v',
-            help = "Enable debuggin mode. Prints to stderr.",
-            defaultValue = "false"
+            help = "Set the logging level. Allowed values: info, debug, trace, warn, error",
+            defaultValue = "info"
     )
-    public boolean debug;
+    public String level;
 
     @Option(
             name = "command",

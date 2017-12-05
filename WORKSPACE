@@ -87,3 +87,31 @@ maven_repository(
 
 load("@google_cloud_storage//:rules.bzl", "google_cloud_storage_compile")
 google_cloud_storage_compile()
+
+maven_repository(
+    name = 'slf4j',
+    deps = [
+        'org.slf4j:slf4j-api:1.7.25',
+    ],
+    transitive_deps = [
+        'da76ca59f6a57ee3102f8f9bd9cee742973efa8a:org.slf4j:slf4j-api:1.7.25',
+    ],
+)
+
+load("@slf4j//:rules.bzl", "slf4j_compile")
+slf4j_compile()
+
+maven_repository(
+    name = 'logback_classic',
+    deps = [
+        'ch.qos.logback:logback-classic:1.2.3',
+    ],
+    transitive_deps = [
+        '7c4f3c474fb2c041d8028740440937705ebb473a:ch.qos.logback:logback-classic:1.2.3',
+        '864344400c3d4d92dfeb0a305dc87d953677c03c:ch.qos.logback:logback-core:1.2.3',
+        'da76ca59f6a57ee3102f8f9bd9cee742973efa8a:org.slf4j:slf4j-api:1.7.25',
+    ],
+)
+
+load("@logback_classic//:rules.bzl", "logback_classic_compile")
+logback_classic_compile()
