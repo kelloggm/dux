@@ -1,0 +1,10 @@
+Testing dux requires us to build a project, and then repeat that build on another machine.
+
+We use Travis for continuous integration tests. The CI tests (which are all in this folder) should never be broken.
+
+Each test is a pair of shell scripts (e.g. smoke.sh and smoke_config.sh) and a directory (for the smoke test, /shell).
+The shell script without _config is the actual version; the _config file generates the expected output for the test.
+The two scripts are mostly identical, but the _config file uses the --saveconfig (-a) option of dux to also save the
+config file to the GCS bucket where the dependencies are saved. You can then retrieve it and commit it to source control
+in the directory of the test project. The non-_config version assumes the presence of an "expected.dux" file, which it
+compares the result of running dux to using diff.
