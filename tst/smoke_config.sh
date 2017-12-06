@@ -4,12 +4,8 @@
 
 set -eu
 
-echo "running dux -c make"
+cd shell
 
-ls
-
-dux -c make
-
-echo "uploading to server"
+../../bazel-bin/dux -c make
 
 gsutil cp build.dux gs://duxserver-test0
