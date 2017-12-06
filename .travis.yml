@@ -12,16 +12,14 @@ before_install:
 # install google cloud sdk, required for config. Comment this line and the next line if you are not configuring a test
 - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 - source /home/travis/google-cloud-sdk/path.bash.inc
-- |
-  GOOGLE_APPLICATION_CREDENTIALS=credentials/GOOGLE_APPLICATION_CREDENTIALS
-  URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-${OS}-x86_64.sh"
-  wget -O install.sh "${URL}"
-  chmod +x install.sh
-  ./install.sh --user
-  rm -f install.sh
+- GOOGLE_APPLICATION_CREDENTIALS=credentials/GOOGLE_APPLICATION_CREDENTIALS
+- URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-${OS}-x86_64.sh"
+- wget -O install.sh "${URL}"
+- chmod +x install.sh
+- ./install.sh --user
+- rm -f install.sh
 script:
-- |
-  bazel build //:dux
-  bazel test //:dux_smoke_config
+- bazel build //:dux
+- bazel test //:dux_smoke_config
 notifications:
   email: false
