@@ -21,6 +21,6 @@ before_install:
 script:
 - bazel build //:dux
 - cd tst
-- smoke_config.sh
+- sh smoke_config.sh
 notifications:
   email: false
