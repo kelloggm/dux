@@ -6,4 +6,4 @@ set -eu
 
 ../../bazel-bin/dux -c make
 
-gsutil cp build.dux gs://duxserver-0
+gsutil cp build.dux gs://duxserver-test0
