@@ -10,12 +10,11 @@ export GOOGLE_APPLICATION_CREDENTIALS=../../credentials/GOOGLE_APPLICATION_CREDE
 
 ../../bazel-bin/dux -c make
 
-diff build.dux expected.dux
-
-echo "printing build.dux"
-
-../../bazel-bin/dux -f build.dux
-
-echo "printing expected.dux"
-
-../../bazel-bin/dux -f expected.dux
+if ! diff build.dux expected.dux; then
+    echo "build.dux and expected.dux differ!"
+    echo "printing build.dux"
+    ../../bazel-bin/dux -f build.dux
+    echo "printing expected.dux"
+    ../../bazel-bin/dux -f expected.dux
+    exit 1
+fi
