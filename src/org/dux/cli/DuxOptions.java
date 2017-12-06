@@ -63,4 +63,12 @@ public class DuxOptions extends OptionsBase {
             defaultValue = "duxserver-test0"
     )
     public String bucketName;
+
+    @Option(
+            name = "saveconfig",
+            abbrev = 'a',
+            help = "If this option is set, the generated configuration file is uploaded along with the dependencies",
+            defaultValue = false
+    )
+    public boolean fSaveConfig;
 }

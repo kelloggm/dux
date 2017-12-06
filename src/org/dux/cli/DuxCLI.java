@@ -43,8 +43,7 @@ public class DuxCLI {
             // This means no command was specified. Read and print the specified dux file.
             logger.debug("reading configuration file: {}", options.file);
             DuxConfiguration config = DuxConfigurationIO.read(options.file);
-            System.out.println(config);
-            return;
+            logger.debug("config: {}", config);
         } else {
             // A command was specified, so execute and trace it, and print the results to
             // the specified config file.
@@ -75,7 +74,9 @@ public class DuxCLI {
             }
             DuxConfigurationIO.write(options.file, config);
             logger.debug("wrote configuration file: {}", options.file);
-            return;
+        }
+        if (options.fSaveConfig) {
+            backingStore.storeFile(options.file, options.file);
         }
     }
 
