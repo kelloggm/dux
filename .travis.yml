@@ -5,7 +5,6 @@ os:
 - linux
 env:
 - V=0.8.0
-- OS=linux
 before_install:
 - openssl aes-256-cbc -K $encrypted_54e504417c73_key -iv $encrypted_54e504417c73_iv
   -in credentials/GOOGLE_APPLICATION_CREDENTIALS.enc -out credentials/GOOGLE_APPLICATION_CREDENTIALS
@@ -14,7 +13,7 @@ before_install:
 - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 - source /home/travis/google-cloud-sdk/path.bash.inc
 - export GOOGLE_APPLICATION_CREDENTIALS=credentials/GOOGLE_APPLICATION_CREDENTIALS
-- export URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-${OS}-x86_64.sh"
+- export URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-linux-x86_64.sh"
 - wget -O install.sh "${URL}"
 - chmod +x install.sh
 - ./install.sh --user
