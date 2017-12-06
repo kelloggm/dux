@@ -43,6 +43,32 @@ public class DuxBuildTracer {
         fileHashes = new HashMap<Path, HashCode>();
     }
 
+    private static boolean pathsSharePrefix(Path p1, Path p2, int minPrefixLength) {
+        Path absolute1 = p1.toAbsolutePath().normalize();
+        Path absolute2 = p2.toAbsolutePath().normalize();
+
+        int nameCount1 = absolute1.getNameCount();
+        int nameCount2 = absolute2.getNameCount();
+
+        int indices = Math.min(nameCount1, nameCount2);
+        // paths too short
+        if (indices < minPrefixLength) {
+            return false;
+        }
+
+        int sharedPrefixLength = 0;
+        for (int i = 0; i < indices; i++) {
+            Path elt1 = absolute1.getName(i);
+            Path elt2 = absolute2.getName(i);
+            if (!elt1.equals(elt2)) {
+                break;
+            }
+            sharedPrefixLength++;
+        }
+
+        return sharedPrefixLength >= minPrefixLength;
+    }
+
     public void trace() throws IOException, InterruptedException {
         DuxCLI.logger.debug("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
@@ -69,7 +95,7 @@ public class DuxBuildTracer {
 
     private void parseStraceFile() throws IOException, FileNotFoundException {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
-	Path currentDir = Paths.get(".").toAbsolutePath().normalize();
+        Path currentDir = Paths.get(".").toAbsolutePath().normalize();
 
         DuxCLI.logger.debug("created strace call list");
 
@@ -95,25 +121,32 @@ public class DuxBuildTracer {
             String path = rawPath.substring(1, rawPath.length() - 1);
             DuxCLI.logger.debug("got path: {}", path);
 
-	    // we only want to hash regular files
-	    Path p = Paths.get(path).normalize();
-	    DuxCLI.logger.debug("checking if file is a regular file");
-	    if (!Files.isRegularFile(p)) {
-		DuxCLI.logger.debug("{} is not a regular file", p.toString());
-		continue;
-	    }
+            // we only want to hash regular files
+            Path p = Paths.get(path).normalize();
+            DuxCLI.logger.debug("checking if file is a regular file");
+            if (!Files.isRegularFile(p)) {
+                DuxCLI.logger.debug("{} is not a regular file", p.toString());
+                continue;
+            }
 
-	    // we want to relativize the path if it seems like it could be user-specific
-	    // (don't want absolute paths to go down user-specific directories if another
-	    //  user might run the build with the same directory structure)
-	    // Probably some cases where this is insufficient but it's a start
+            // /proc/meminfo is present on all linux machines and details the system spec. This isn't important,
+            // but many build tools look at it when e.g. deciding how many threads to spin up. Ignore it.
+            if (p.toString().equals("/proc/meminfo")) {
+                DuxCLI.logger.debug("skipping /proc/meminfo");
+                continue;
+            }
 
-	    // Min prefix length of 1 ==> they share a prefix that isn't root
-	    DuxCLI.logger.debug("checking if file shares prefix with the current working directory");
-	    if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
-		DuxCLI.logger.debug("{} shares prefix with the current directory", p.toString());
-		p = currentDir.relativize(p).normalize();
-	    }
+            // we want to relativize the path if it seems like it could be user-specific
+            // (don't want absolute paths to go down user-specific directories if another
+            //  user might run the build with the same directory structure)
+            // Probably some cases where this is insufficient but it's a start
+
+            // Min prefix length of 1 ==> they share a prefix that isn't root
+            DuxCLI.logger.debug("checking if file shares prefix with the current working directory");
+            if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
+                DuxCLI.logger.debug("{} shares prefix with the current directory", p.toString());
+                p = currentDir.relativize(p).normalize();
+            }
 
             // don't hash if it's already present
             DuxCLI.logger.debug("checking if file already hashed");
@@ -132,31 +165,5 @@ public class DuxBuildTracer {
         }
 
         DuxCLI.logger.debug("completed recording of calls");
-    }
-
-    private static boolean pathsSharePrefix(Path p1, Path p2, int minPrefixLength) {
-	Path absolute1 = p1.toAbsolutePath().normalize();
-	Path absolute2 = p2.toAbsolutePath().normalize();
-
-	int nameCount1 = absolute1.getNameCount();
-	int nameCount2 = absolute2.getNameCount();
-
-	int indices = Math.min(nameCount1, nameCount2);
-	// paths too short
-	if (indices < minPrefixLength) {
-	    return false;
-	}
-
-	int sharedPrefixLength = 0;
-	for (int i = 0; i < indices; i++) {
-	    Path elt1 = absolute1.getName(i);
-	    Path elt2 = absolute2.getName(i);
-	    if (!elt1.equals(elt2)) {
-		break;
-	    }
-	    sharedPrefixLength++;
-	}
-	
-	return sharedPrefixLength >= minPrefixLength;
     }
 }
