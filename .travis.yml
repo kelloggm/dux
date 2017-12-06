@@ -20,6 +20,6 @@ before_install:
 - rm -f install.sh
 script:
 - bazel build //:dux
-- bazel test //:dux_smoke_config
+- sh tst/smoke_config.sh
 notifications:
   email: false

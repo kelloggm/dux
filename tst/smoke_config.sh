@@ -4,12 +4,11 @@
 
 set -eu
 
-echo -n "pwd:"
-echo `pwd`
-
 echo "running dux -c make"
 
-../../bazel-bin/dux -c make
+ls
+
+dux -c make
 
 echo "uploading to server"
 

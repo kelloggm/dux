@@ -9,17 +9,3 @@ java_binary(
     srcs = glob(["src/org/dux/cli/*.java", 
                  "src/org/dux/backingstore/*.java"]),
 )
-
-sh_test(
-    name = "dux_smoke",
-    size = "small",
-    srcs = ["tst/smoke.sh"],
-    data = glob(["tst/shell/*"]),
-)
-
-sh_test(
-    name = "dux_smoke_config",
-    size = "small",
-    srcs = ["tst/smoke_config.sh"],
-    data = glob(["tst/shell/*"]),
-)
