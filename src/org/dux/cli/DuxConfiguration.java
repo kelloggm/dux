@@ -25,12 +25,10 @@ public class DuxConfiguration implements Serializable,
         Iterable<DuxConfigurationEntry> {
     @Nullable
     final String projectName;
-    final ZonedDateTime creationTime;
     final List<DuxConfigurationEntry> entries;
 
     public DuxConfiguration(@Nullable final String projectName) {
         this.projectName = projectName;
-        this.creationTime = ZonedDateTime.now();
         this.entries = new ArrayList<>();
     }
 
@@ -66,7 +64,6 @@ public class DuxConfiguration implements Serializable,
     public String toString() {
         String result = "DuxConfiguration{" +
                 "projectName='" + projectName + '\'' +
-                ", creationTime=" + creationTime +
                 ", entries={";
 
         for (DuxConfigurationEntry entry : entries) {
