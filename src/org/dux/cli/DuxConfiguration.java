@@ -70,7 +70,7 @@ public class DuxConfiguration implements Serializable,
                 ", entries={";
 
         for (DuxConfigurationEntry entry : entries) {
-            result += entry + ", ";
+            result += entry + ", \n";
         }
         result = result.substring(0, result.length() - 1);
         result += "}";
