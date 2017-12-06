@@ -68,7 +68,7 @@ public class DuxOptions extends OptionsBase {
             name = "saveconfig",
             abbrev = 'a',
             help = "If this option is set, the generated configuration file is uploaded along with the dependencies",
-            defaultValue = false
+            defaultValue = "false"
     )
     public boolean fSaveConfig;
 }
