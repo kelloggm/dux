@@ -13,8 +13,8 @@ export GOOGLE_APPLICATION_CREDENTIALS=../../credentials/GOOGLE_APPLICATION_CREDE
 if ! diff build.dux expected.dux; then
     echo "build.dux and expected.dux differ!"
     echo "printing build.dux"
-    ../../bazel-bin/dux -f build.dux
+    ../../bazel-bin/dux -f build.dux -v debug
     echo "printing expected.dux"
-    ../../bazel-bin/dux -f expected.dux
+    ../../bazel-bin/dux -f expected.dux -v debug
     exit 1
 fi
