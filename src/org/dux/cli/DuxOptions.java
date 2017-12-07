@@ -84,7 +84,7 @@ public class DuxOptions extends OptionsBase {
 	    name = "ignoreprojdir",
 	    abbrev = 'i',
 	    help = "If this option is set to false, then the current directory (the project directory) is counted as a dependency",
-	    defaultValue = "false"
+	    defaultValue = "true"
     )
     public boolean ignoreProjDir;
 

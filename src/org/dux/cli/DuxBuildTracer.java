@@ -139,7 +139,7 @@ public class DuxBuildTracer {
             }
 
             // disregard project files (heuristic: they're not dependencies)
-	    if (!ignoreProjDir && p.toString().startsWith(currentDir.toString())) {
+	    if (ignoreProjDir && p.toString().startsWith(currentDir.toString())) {
                 DuxCLI.logger.debug("{} is in the current project directory", p.toString());
                 continue;
             }
