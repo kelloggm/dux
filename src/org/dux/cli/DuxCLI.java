@@ -51,7 +51,7 @@ public class DuxCLI {
             DuxBuildTracer tracer = new DuxBuildTracer(Collections.singletonList(options.command));
             logger.debug("beginning trace of this program: {}", options.command);
             try {
-                tracer.trace();
+                tracer.trace(options.ignoreProjDir, options.includeDefaultBlacklist);
             } catch (IOException ioe) {
                 ioe.printStackTrace();
                 return;

@@ -71,4 +71,19 @@ public class DuxOptions extends OptionsBase {
             defaultValue = "false"
     )
     public boolean fSaveConfig;
+
+    @Option(
+	    name = "ignoreprojdir",
+	    abbrev = 'i',
+	    help = "If this option is set to false, then the current directory (the project directory) is counted as a dependency",
+	    defaultValue = "false"
+    )
+    public boolean ignoreProjDir;
+
+    @Option(
+	    name = "includedefaultblacklist",
+	    help = "If this option is set to false, then Dux will not use the default blacklist while tracing (mostly low-level system files)",
+	    defaultValue = "true"
+    )
+    public boolean includeDefaultBlacklist;
 }

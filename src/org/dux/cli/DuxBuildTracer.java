@@ -69,15 +69,17 @@ public class DuxBuildTracer {
         return sharedPrefixLength >= minPrefixLength;
     }
 
-    public void trace() throws IOException, InterruptedException {
+    public void trace(boolean ignoreProjDir, boolean includeDefaultBlacklist) throws IOException, InterruptedException {
         DuxCLI.logger.debug("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
         DuxCLI.logger.debug("runtime acquired, executing program");
         Process proc = rt.exec(args);
         DuxCLI.logger.debug("waiting for build to terminate");
         proc.waitFor();
+	DuxCLI.logger.debug("Loading trace blacklist");
+	DuxTraceBlacklist blacklist = new DuxTraceBlacklist(includeDefaultBlacklist);
         DuxCLI.logger.debug("parsing strace file");
-        parseStraceFile();
+        parseStraceFile(ignoreProjDir, blacklist);
         DuxCLI.logger.debug("deleting strace file");
         // get rid of strace TMP file once we're done
         File f = new File(TMP_FILE);
@@ -93,7 +95,7 @@ public class DuxBuildTracer {
         }
     }
 
-    private void parseStraceFile() throws IOException, FileNotFoundException {
+    private void parseStraceFile(boolean ignoreProjDir, DuxTraceBlacklist blacklist) throws IOException, FileNotFoundException {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
         Path currentDir = Paths.get(".").toAbsolutePath().normalize();
 
@@ -121,18 +123,24 @@ public class DuxBuildTracer {
             String path = rawPath.substring(1, rawPath.length() - 1);
             DuxCLI.logger.debug("got path: {}", path);
 
-            // we only want to hash regular files
             Path p = Paths.get(path).normalize();
+
+	    // check for blacklisted files
+	    if (blacklist.contains(p)) {
+		DuxCLI.logger.debug("{} is blacklisted, ignoring", p.toString());
+		continue;
+	    }
+
+            // we only want to hash regular files
             DuxCLI.logger.debug("checking if file is a regular file");
             if (!Files.isRegularFile(p)) {
                 DuxCLI.logger.debug("{} is not a regular file", p.toString());
                 continue;
             }
 
-            // /proc/meminfo is present on all linux machines and details the system spec. This isn't important,
-            // but many build tools look at it when e.g. deciding how many threads to spin up. Ignore it.
-            if (p.toString().equals("/proc/meminfo")) {
-                DuxCLI.logger.debug("skipping /proc/meminfo");
+            // disregard project files (heuristic: they're not dependencies)
+	    if (!ignoreProjDir && p.toString().startsWith(currentDir.toString())) {
+                DuxCLI.logger.debug("{} is in the current project directory", p.toString());
                 continue;
             }
 
