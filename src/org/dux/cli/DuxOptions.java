@@ -33,6 +33,14 @@ public class DuxOptions extends OptionsBase {
     public String command;
 
     @Option(
+	    name = "check",
+	    abbrev = 'k',
+	    help = "Check the configuration file against the current directory.",
+	    defaultValue = "NOT SET"
+    )
+    public String checkConfig;
+
+    @Option(
             name = "name",
             abbrev = 'n',
             help = "A name to associate with the generated config file.",

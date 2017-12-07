@@ -44,6 +44,18 @@ public class DuxCLI {
             logger.debug("reading configuration file: {}", options.file);
             DuxConfiguration config = DuxConfigurationIO.read(options.file);
             logger.debug("config: {}", config);
+	    // if we've been set to check the config, we'll do that now
+	    if (!options.checkConfig.equals("NOT SET")) {
+		logger.debug("checking configuration...");
+		DuxConfigChecker checker = new DuxConfigChecker(backingStore);
+		try {
+		    checker.checkConfig(config);
+		} catch (IOException ioe) {
+		    ioe.printStackTrace();
+		    return;
+		}
+		logger.debug("finished checking");
+	    }
         } else {
             // A command was specified, so execute and trace it, and print the results to
             // the specified config file.
@@ -75,6 +87,7 @@ public class DuxCLI {
             DuxConfigurationIO.write(options.file, config);
             logger.debug("wrote configuration file: {}", options.file);
         }
+
         if (options.fSaveConfig) {
             backingStore.storeFile(options.file, options.file);
         }
