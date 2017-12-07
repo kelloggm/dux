@@ -20,23 +20,15 @@ public class DuxConfigChecker {
     }
 
     /**
-     * For the config at the specified path, iterate through and
-     * check that each file is present. If the file is missing,
-     * download it from the store to the desired location. If the
-     * file is present but the hash does not match, print a warning.
+     * For the given config, iterate through and check that each file is present. 
+     * If the file is missing, download it from the store to the desired location. 
+     * If the file is present but the hash does not match, print a warning.
      *
-     * @throws IllegalArgumentException if the config fails to be read
      * @throws FileNotFoundException    if a fetch fails
      */
-    public void checkConfig(String configPath) throws IOException, FileNotFoundException {
-        DuxConfiguration config = DuxConfigurationIO.read(configPath);
-        if (config == null) {
-            throw new IllegalArgumentException("Configuration read failed");
-        }
-
+    public void checkConfig(DuxConfiguration config) throws IOException, FileNotFoundException {
         for (DuxConfigurationEntry entry : config) {
-            ;
-            // file does not exist,
+            // if file does not exist, try to fetch it
             DuxCLI.logger.debug("Checking if file {} exists", entry.path.toString());
             if (!entry.path.exists()) {
                 DuxCLI.logger.debug("File {} does not exist, pulling", entry.path.toString());
