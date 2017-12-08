@@ -54,7 +54,7 @@ public class GoogleBackingStore implements DuxBackingStore {
     @Override
     public boolean fetchFile(String key, String target) {
         DuxCLI.logger.debug("Fetching hash {} from Google Cloud Storage", key);
-        Blob blob = storage.get(BlobId.of(key, BUCKET_NAME, null));
+        Blob blob = storage.get(BUCKET_NAME, key);
         if (blob == null) {
             DuxCLI.logger.debug("GCS reports it could not find the file");
             return false;

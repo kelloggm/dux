@@ -25,10 +25,10 @@ public class DuxOptions extends OptionsBase {
     public String level;
 
     @Option(
-	    name = "dump",
-	    abbrev = 'd',
-	    help = "Dump the Dux config to standard input if no command specified",
-	    defaultValue = "false"
+            name = "dump",
+            abbrev = 'd',
+            help = "Dump the Dux config to standard input if no command specified",
+            defaultValue = "false"
     )
     public boolean dumpConfig;
 
@@ -41,10 +41,10 @@ public class DuxOptions extends OptionsBase {
     public String command;
 
     @Option(
-	    name = "check",
-	    abbrev = 'k',
-	    help = "Check the configuration file against the current directory.",
-	    defaultValue = "false"
+            name = "check",
+            abbrev = 'k',
+            help = "Check the configuration file against the current directory.",
+            defaultValue = "false"
     )
     public boolean checkConfig;
 
@@ -89,17 +89,17 @@ public class DuxOptions extends OptionsBase {
     public boolean fSaveConfig;
 
     @Option(
-	    name = "includeprojdir",
-	    abbrev = 'i',
-	    help = "If this option is set to true, then files in the current directory (the project directory) will be counted as dependencies",
-	    defaultValue = "false"
+            name = "includeprojdir",
+            abbrev = 'i',
+            help = "If this option is set to true, then files in the current directory (the project directory) will be counted as dependencies",
+            defaultValue = "false"
     )
     public boolean includeProjDir;
 
     @Option(
-	    name = "includedefaultblacklist",
-	    help = "If this option is set to false, then Dux will not use the default blacklist while tracing (mostly low-level system files)",
-	    defaultValue = "true"
+            name = "includedefaultblacklist",
+            help = "If this option is set to false, then Dux will not use the default blacklist while tracing (mostly low-level system files)",
+            defaultValue = "true"
     )
     public boolean includeDefaultBlacklist;
 }
