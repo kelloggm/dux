@@ -19,3 +19,5 @@ if ! diff build.dux expected.dux; then
     diff build.dux.readable expected.dux.readable
     exit 1
 fi
+
+rm -f build.dux
