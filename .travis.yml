@@ -19,5 +19,6 @@ script:
 - bazel build //:dux
 - cd tst
 - sh smoke.sh
+- sh ignoreproj.sh
 notifications:
   email: false
