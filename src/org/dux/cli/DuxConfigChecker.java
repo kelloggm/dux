@@ -29,15 +29,15 @@ public class DuxConfigChecker {
     public void checkConfig(DuxConfiguration config) throws IOException, FileNotFoundException {
         for (DuxConfigurationEntry entry : config) {
             // if file does not exist, try to fetch it
-            DuxCLI.logger.debug("Checking if file {} exists", entry.path.toString());
+            DuxCLI.logger.info("Checking if file {} exists", entry.path.toString());
             if (!entry.path.exists()) {
-                DuxCLI.logger.debug("File {} does not exist, pulling", entry.path.toString());
+                DuxCLI.logger.info("File {} does not exist, pulling", entry.path.toString());
                 if (!store.fetchFile(entry.hashCode.toString(),
                         entry.path.toString())) {
                     DuxCLI.logger.error("Failed to download entry {} to location {}", entry.hashCode.toString(), entry.path);
                     throw new FileNotFoundException(entry.hashCode.toString());
                 }
-                DuxCLI.logger.debug("Successfully fetched file {}", entry.path.toString());
+                DuxCLI.logger.info("Successfully fetched file {}", entry.path.toString());
                 continue;
             }
 
@@ -50,7 +50,7 @@ public class DuxConfigChecker {
                 continue;
             }
 
-            DuxCLI.logger.debug("{} exists and hash matches", entry.path.toString());
+            DuxCLI.logger.info("{} exists and hash matches", entry.path.toString());
         }
     }
 }
