@@ -43,6 +43,13 @@ public class DuxBuildTracer {
         fileHashes = new HashMap<Path, HashCode>();
     }
 
+    private static boolean pathInSubdirectory(Path parent, Path candidate)
+	throws IOException {
+        String canonicalParent = parent.toFile().getCanonicalPath();
+	String canonicalCandidate = candidate.toFile().getCanonicalPath();
+	return canonicalCandidate.startsWith(canonicalParent);
+    }
+
     private static boolean pathsSharePrefix(Path p1, Path p2, int minPrefixLength) {
         Path absolute1 = p1.toAbsolutePath().normalize();
         Path absolute2 = p2.toAbsolutePath().normalize();
@@ -69,8 +76,9 @@ public class DuxBuildTracer {
         return sharedPrefixLength >= minPrefixLength;
     }
 
-    public void trace(boolean ignoreProjDir, boolean includeDefaultBlacklist) throws IOException, InterruptedException {
+    public void trace(boolean includeProjDir, boolean includeDefaultBlacklist) throws IOException, InterruptedException {
         DuxCLI.logger.debug("beginning a trace, getting runtime");
+	DuxCLI.logger.debug("trace params: {}, {}", includeProjDir, includeDefaultBlacklist);
         Runtime rt = Runtime.getRuntime();
         DuxCLI.logger.debug("runtime acquired, executing program");
         Process proc = rt.exec(args);
@@ -79,7 +87,7 @@ public class DuxBuildTracer {
 	DuxCLI.logger.debug("Loading trace blacklist");
 	DuxTraceBlacklist blacklist = new DuxTraceBlacklist(includeDefaultBlacklist);
         DuxCLI.logger.debug("parsing strace file");
-        parseStraceFile(ignoreProjDir, blacklist);
+        parseStraceFile(includeProjDir, blacklist);
         DuxCLI.logger.debug("deleting strace file");
         // get rid of strace TMP file once we're done
         File f = new File(TMP_FILE);
@@ -95,7 +103,7 @@ public class DuxBuildTracer {
         }
     }
 
-    private void parseStraceFile(boolean ignoreProjDir, DuxTraceBlacklist blacklist) throws IOException, FileNotFoundException {
+    private void parseStraceFile(boolean includeProjDir, DuxTraceBlacklist blacklist) throws IOException, FileNotFoundException {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
         Path currentDir = Paths.get(".").toAbsolutePath().normalize();
 
@@ -139,7 +147,7 @@ public class DuxBuildTracer {
             }
 
             // disregard project files (heuristic: they're not dependencies)
-	    if (ignoreProjDir && p.toString().startsWith(currentDir.toString())) {
+	    if (!includeProjDir && pathInSubdirectory(currentDir, p)) {
                 DuxCLI.logger.debug("{} is in the current project directory", p.toString());
                 continue;
             }

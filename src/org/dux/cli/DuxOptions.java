@@ -25,6 +25,14 @@ public class DuxOptions extends OptionsBase {
     public String level;
 
     @Option(
+	    name = "dump",
+	    abbrev = 'd',
+	    help = "Dump the Dux config to standard input if no command specified",
+	    defaultValue = "false"
+    )
+    public boolean dumpConfig;
+
+    @Option(
             name = "command",
             abbrev = 'c',
             help = "The command to trace.",
@@ -36,9 +44,9 @@ public class DuxOptions extends OptionsBase {
 	    name = "check",
 	    abbrev = 'k',
 	    help = "Check the configuration file against the current directory.",
-	    defaultValue = "NOT SET"
+	    defaultValue = "false"
     )
-    public String checkConfig;
+    public boolean checkConfig;
 
     @Option(
             name = "name",
@@ -81,12 +89,12 @@ public class DuxOptions extends OptionsBase {
     public boolean fSaveConfig;
 
     @Option(
-	    name = "ignoreprojdir",
+	    name = "includeprojdir",
 	    abbrev = 'i',
-	    help = "If this option is set to false, then the current directory (the project directory) is counted as a dependency",
-	    defaultValue = "true"
+	    help = "If this option is set to true, then files in the current directory (the project directory) will be counted as dependencies",
+	    defaultValue = "false"
     )
-    public boolean ignoreProjDir;
+    public boolean includeProjDir;
 
     @Option(
 	    name = "includedefaultblacklist",

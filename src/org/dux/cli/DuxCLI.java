@@ -43,9 +43,15 @@ public class DuxCLI {
             // This means no command was specified. Read and print the specified dux file.
             logger.debug("reading configuration file: {}", options.file);
             DuxConfiguration config = DuxConfigurationIO.read(options.file);
-            logger.debug("config: {}", config);
+
+	    if (options.dumpConfig) {
+		logger.info("config: {}", config);
+	    } else {
+		logger.debug("config: {}", config);
+	    }
+
 	    // if we've been set to check the config, we'll do that now
-	    if (!options.checkConfig.equals("NOT SET")) {
+	    if (options.checkConfig) {
 		logger.debug("checking configuration...");
 		DuxConfigChecker checker = new DuxConfigChecker(backingStore);
 		try {
@@ -63,7 +69,7 @@ public class DuxCLI {
             DuxBuildTracer tracer = new DuxBuildTracer(Collections.singletonList(options.command));
             logger.debug("beginning trace of this program: {}", options.command);
             try {
-                tracer.trace(options.ignoreProjDir, options.includeDefaultBlacklist);
+                tracer.trace(options.includeProjDir, options.includeDefaultBlacklist);
             } catch (IOException ioe) {
                 ioe.printStackTrace();
                 return;
