@@ -29,10 +29,8 @@ public class DuxTraceBlacklist {
 	paths = new HashSet<Path>();
 
 	if (includeDefaults) {
-	    // no need to normalize; Path.equals() checks if two paths
-	    // point to the same file
 	    for (String path : DEFAULT_LIST) {
-		paths.add(Paths.get(path));
+		paths.add(Paths.get(path).toAbsolutePath().normalize());
 	    }
 	}
 
@@ -46,7 +44,7 @@ public class DuxTraceBlacklist {
 	try (BufferedReader br = Files.newBufferedReader(blacklistPath)) {
 	    while (br.ready()) { 
 		String line = br.readLine();
-		paths.add(Paths.get(line));
+		paths.add(Paths.get(line).toAbsolutePath().normalize());
 	    }
 	}
     }
