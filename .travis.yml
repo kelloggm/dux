@@ -20,5 +20,6 @@ script:
 - cd tst
 - sh ignoreproj.sh
 - sh smoke.sh
+- sh configcheck.sh
 notifications:
   email: false
