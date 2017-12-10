@@ -12,9 +12,9 @@ import java.util.Collections;
 
 /**
  * The driver for the Dux build orchestration system.
- *
+ * <p>
  * This is a command line utility.
- *
+ * <p>
  * To invoke it, run "java Dux [options]"
  */
 public class DuxCLI {
@@ -26,7 +26,7 @@ public class DuxCLI {
         parser.parseAndExitUponError(args);
         DuxOptions options = parser.getOptions(DuxOptions.class);
 
-        logger = (Logger)LoggerFactory.getLogger(DuxCLI.class);
+        logger = (Logger) LoggerFactory.getLogger(DuxCLI.class);
         logger.setLevel(Level.toLevel(options.level));
 
         if (options.help) {
@@ -44,24 +44,24 @@ public class DuxCLI {
             logger.debug("reading configuration file: {}", options.file);
             DuxConfiguration config = DuxConfigurationIO.read(options.file);
 
-	    if (options.dumpConfig) {
-		logger.info("config: {}", config);
-	    } else {
-		logger.debug("config: {}", config);
-	    }
+            if (options.dumpConfig) {
+                logger.info("config: {}", config);
+            } else {
+                logger.debug("config: {}", config);
+            }
 
-	    // if we've been set to check the config, we'll do that now
-	    if (options.checkConfig) {
-		logger.debug("checking configuration...");
-		DuxConfigChecker checker = new DuxConfigChecker(backingStore);
-		try {
-		    checker.checkConfig(config);
-		} catch (IOException ioe) {
-		    ioe.printStackTrace();
-		    return;
-		}
-		logger.debug("finished checking");
-	    }
+            // if we've been set to check the config, we'll do that now
+            if (options.checkConfig) {
+                logger.debug("checking configuration...");
+                DuxConfigChecker checker = new DuxConfigChecker(backingStore);
+                try {
+                    checker.checkConfig(config);
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
+                    return;
+                }
+                logger.debug("finished checking");
+            }
         } else {
             // A command was specified, so execute and trace it, and print the results to
             // the specified config file.

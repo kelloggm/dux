@@ -8,6 +8,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import org.dux.cli.DuxCLI;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -60,10 +61,15 @@ public class GoogleBackingStore implements DuxBackingStore {
             return false;
         }
         PrintStream writeTo;
+        File targetFile = new File(target);
+        if (!targetFile.mkdirs()) {
+            DuxCLI.logger.error("could not create directories needed to write to {}. Do you need to run as root?", target);
+            return false;
+        }
         try {
-            writeTo = new PrintStream(new FileOutputStream(target));
+            writeTo = new PrintStream(new FileOutputStream(targetFile));
         } catch (IOException ioe) {
-            DuxCLI.logger.debug("target file {} could not be opened for writing", target);
+            DuxCLI.logger.error("target file {} could not be opened for writing", target);
             return false;
         }
         if (blob.getSize() < 1_000_000) {
@@ -72,7 +78,7 @@ public class GoogleBackingStore implements DuxBackingStore {
             try {
                 writeTo.write(content);
             } catch (IOException ioe) {
-                DuxCLI.logger.debug("failed to write to target file {}", target);
+                DuxCLI.logger.error("failed to write to target file {}", target);
                 return false;
             }
         } else {
