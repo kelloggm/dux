@@ -62,7 +62,7 @@ public class GoogleBackingStore implements DuxBackingStore {
         }
         PrintStream writeTo;
         File targetFile = new File(target);
-        if (!targetFile.mkdirs()) {
+        if (!targetFile.getParentFile().mkdirs()) {
             DuxCLI.logger.error("could not create directories needed to write to {}. Do you need to run as root?", target);
             return false;
         }
