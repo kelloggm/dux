@@ -21,8 +21,7 @@ import org.dux.backingstore.DuxBackingStore;
  * as the project name (optional), and information
  * about when it was created.
  */
-public class DuxConfiguration implements Serializable,
-        Iterable<DuxConfigurationEntry> {
+public class DuxConfiguration implements Serializable {
     @Nullable
     final String projectName;
     final List<DuxConfigurationEntry> entries;
