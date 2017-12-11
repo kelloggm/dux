@@ -32,7 +32,7 @@ public class DuxBuildTracer {
     private static final String[] STRACE_CALL = {
             "strace",
             "-f",                        // trace subprocesses as well
-            "-e", "trace=file,process",  // we care about calls to open or exec
+            "-e", "trace=open,exec,readlink",  // we care about calls to open or exec
             "-o", TMP_FILE               // write to tmp file
     };
 
