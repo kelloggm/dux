@@ -26,10 +26,12 @@ public class DuxConfiguration implements Serializable,
     @Nullable
     final String projectName;
     final List<DuxConfigurationEntry> entries;
+    final List<DuxConfigurationLink> links;
 
     public DuxConfiguration(@Nullable final String projectName) {
         this.projectName = projectName;
         this.entries = new ArrayList<>();
+        this.links = new ArrayList<>();
     }
 
     /**
@@ -37,6 +39,13 @@ public class DuxConfiguration implements Serializable,
      */
     public void add(final DuxConfigurationEntry entry) {
         entries.add(entry);
+    }
+
+    /**
+     * Adds {@code entry} to this configuration
+     */
+    public void addLink(final DuxConfigurationLink entry) {
+        links.add(entry);
     }
 
     /**
@@ -60,6 +69,8 @@ public class DuxConfiguration implements Serializable,
         return entries.iterator();
     }
 
+    public Iterable<DuxConfigurationLink> links() { return links; }
+
     @Override
     public String toString() {
         String result = "DuxConfiguration{" +
@@ -68,6 +79,12 @@ public class DuxConfiguration implements Serializable,
 
         for (DuxConfigurationEntry entry : entries) {
             result += entry + ", \n";
+        }
+        result = result.substring(0, result.length() - 1);
+        result += "}, links={";
+
+        for (DuxConfigurationLink link : links) {
+            result += link + ", \n";
         }
         result = result.substring(0, result.length() - 1);
         result += "}";

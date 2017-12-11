@@ -35,19 +35,22 @@ public class DuxBuildTracer {
     private String[] args;
     private Map<Path, HashCode> fileHashes;
 
+    private Map<Path, Path> links;
+
     public DuxBuildTracer(List<String> args) {
         ArrayList<String> argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
         argList.addAll(args);
         this.args = argList.toArray(new String[0]);
 
         fileHashes = new HashMap<Path, HashCode>();
+        links = new HashMap<>();
     }
 
     private static boolean pathInSubdirectory(Path parent, Path candidate)
-	throws IOException {
+            throws IOException {
         String canonicalParent = parent.toFile().getCanonicalPath();
-	String canonicalCandidate = candidate.toFile().getCanonicalPath();
-	return canonicalCandidate.startsWith(canonicalParent);
+        String canonicalCandidate = candidate.toFile().getCanonicalPath();
+        return canonicalCandidate.startsWith(canonicalParent);
     }
 
     private static boolean pathsSharePrefix(Path p1, Path p2, int minPrefixLength) {
@@ -78,14 +81,14 @@ public class DuxBuildTracer {
 
     public void trace(boolean includeProjDir, boolean includeDefaultBlacklist) throws IOException, InterruptedException {
         DuxCLI.logger.debug("beginning a trace, getting runtime");
-	DuxCLI.logger.debug("trace params: {}, {}", includeProjDir, includeDefaultBlacklist);
+        DuxCLI.logger.debug("trace params: {}, {}", includeProjDir, includeDefaultBlacklist);
         Runtime rt = Runtime.getRuntime();
         DuxCLI.logger.debug("runtime acquired, executing program");
         Process proc = rt.exec(args);
         DuxCLI.logger.debug("waiting for build to terminate");
         proc.waitFor();
-	DuxCLI.logger.debug("Loading trace blacklist");
-	DuxTraceBlacklist blacklist = new DuxTraceBlacklist(includeDefaultBlacklist);
+        DuxCLI.logger.debug("Loading trace blacklist");
+        DuxTraceBlacklist blacklist = new DuxTraceBlacklist(includeDefaultBlacklist);
         DuxCLI.logger.debug("parsing strace file");
         parseStraceFile(includeProjDir, blacklist);
         DuxCLI.logger.debug("deleting strace file");
@@ -101,20 +104,27 @@ public class DuxBuildTracer {
             File f = p.toFile();
             config.add(new DuxConfigurationEntry(p.toString(), hash, !p.isAbsolute(), f));
         }
+
+        for (Map.Entry<Path, Path> entry : links.entrySet()) {
+            Path link = entry.getKey();
+            Path target = entry.getValue();
+            config.addLink(new DuxConfigurationLink(link, target));
+        }
     }
 
     private void parseStraceFile(boolean includeProjDir, DuxTraceBlacklist blacklist) throws IOException, FileNotFoundException {
         List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
-        Path currentDir = Paths.get(".").toAbsolutePath().normalize();
 
         DuxCLI.logger.debug("created strace call list");
 
         for (DuxStraceCall c : calls) {
             DuxCLI.logger.debug("recording a call: {}", c);
 
-            // disregard everything but open and exec calls, for now
+            // disregard everything but open, exec, and readlink calls, for now
             DuxCLI.logger.debug("checking if the call is an open or exec");
-            if (!c.call.equals("open") && !c.call.matches("exec.*")) {
+            boolean fOpenOrExec = c.call.equals("open") || c.call.matches("exec.*");
+            boolean fReadlink = c.call.equals("readlink");
+            if (!fOpenOrExec && !fReadlink) {
                 continue;
             }
 
@@ -133,53 +143,83 @@ public class DuxBuildTracer {
 
             Path p = Paths.get(path).normalize();
 
-	    // check for blacklisted files
-	    if (blacklist.contains(p)) {
-		DuxCLI.logger.debug("{} is blacklisted, ignoring", p.toString());
-		continue;
-	    }
+            if (fOpenOrExec) {
+                if (canHashPath(p, blacklist, includeProjDir)) {
+                    DuxCLI.logger.debug("generating hash");
+                    try {
+                        HashCode hash = hashFile(path);
+                        fileHashes.put(p, hash);
+                    } catch (FileNotFoundException e) {
+                        // must be a file created and deleted during the build
+                        return;
+                    }
+                }
+            } else if (fReadlink) {
+                // readlink calls are treated differently. We need to record the two paths into the
+                // configuration file - assuming they pass all our regular tests - as a special pair
+                // that's turned into a symbolic link by the config checker.
 
-            // we only want to hash regular files
-            DuxCLI.logger.debug("checking if file is a regular file");
-            if (!Files.isRegularFile(p)) {
-                DuxCLI.logger.debug("{} is not a regular file", p.toString());
-                continue;
-            }
+                // p is the symbolic link, and now we need to read the actual file.
 
-            // disregard project files (heuristic: they're not dependencies)
-	    if (!includeProjDir && pathInSubdirectory(currentDir, p)) {
-                DuxCLI.logger.debug("{} is in the current project directory", p.toString());
-                continue;
-            }
+                DuxCLI.logger.debug("getting rawpath for link target");
+                String rawPathTarget = c.args[1];
+                DuxCLI.logger.debug("getting path from this rawpath: {} for link target", rawPathTarget);
+                String pathTarget = rawPathTarget.substring(1, rawPathTarget.length() - 1);
+                DuxCLI.logger.debug("got path: {} for link target", pathTarget);
 
-            // we want to relativize the path if it seems like it could be user-specific
-            // (don't want absolute paths to go down user-specific directories if another
-            //  user might run the build with the same directory structure)
-            // Probably some cases where this is insufficient but it's a start
+                Path pTarget = Paths.get(pathTarget).normalize();
+                // if we can't or don't want to hash the target, then don't include this symbolic link.
+                if (canHashPath(pTarget, blacklist, includeProjDir)) {
+                    links.put(p, pTarget);
+                }
 
-            // Min prefix length of 1 ==> they share a prefix that isn't root
-            DuxCLI.logger.debug("checking if file shares prefix with the current working directory");
-            if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
-                DuxCLI.logger.debug("{} shares prefix with the current directory", p.toString());
-                p = currentDir.relativize(p).normalize();
-            }
-
-            // don't hash if it's already present
-            DuxCLI.logger.debug("checking if file already hashed");
-            if (fileHashes.containsKey(p)) {
-                continue;
-            }
-
-            DuxCLI.logger.debug("generating hash");
-            try {
-                HashCode hash = hashFile(path);
-                fileHashes.put(p, hash);
-            } catch (FileNotFoundException e) {
-                // must be a file created and deleted during the build
-                continue;
             }
         }
 
         DuxCLI.logger.debug("completed recording of calls");
+    }
+
+    private boolean canHashPath(Path p, DuxTraceBlacklist blacklist, boolean includeProjDir) throws IOException{
+
+        // check for blacklisted files
+        if (blacklist.contains(p)) {
+            DuxCLI.logger.debug("{} is blacklisted, ignoring", p.toString());
+            return false;
+        }
+
+        // we only want to hash regular files
+        DuxCLI.logger.debug("checking if file is a regular file");
+        if (!Files.isRegularFile(p)) {
+            DuxCLI.logger.debug("{} is not a regular file", p.toString());
+            return false;
+        }
+
+        Path currentDir = Paths.get(".").toAbsolutePath().normalize();
+
+        // disregard project files (heuristic: they're not dependencies)
+        if (!includeProjDir && pathInSubdirectory(currentDir, p)) {
+            DuxCLI.logger.debug("{} is in the current project directory", p.toString());
+            return false;
+        }
+
+        // we want to relativize the path if it seems like it could be user-specific
+        // (don't want absolute paths to go down user-specific directories if another
+        //  user might run the build with the same directory structure)
+        // Probably some cases where this is insufficient but it's a start
+
+        // Min prefix length of 1 ==> they share a prefix that isn't root
+        DuxCLI.logger.debug("checking if file shares prefix with the current working directory");
+        if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
+            DuxCLI.logger.debug("{} shares prefix with the current directory", p.toString());
+            p = currentDir.relativize(p).normalize();
+        }
+
+        // don't hash if it's already present
+        DuxCLI.logger.debug("checking if file already hashed");
+        if (fileHashes.containsKey(p)) {
+            return false;
+        }
+
+        return true;
     }
 }

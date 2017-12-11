@@ -52,5 +52,9 @@ public class DuxConfigChecker {
 
             DuxCLI.logger.debug("{} exists and hash matches", entry.path.toString());
         }
+        for (DuxConfigurationLink link : config.links()) {
+            DuxCLI.logger.debug("reading a link: {}", link);
+            link.create();
+        }
     }
 }
