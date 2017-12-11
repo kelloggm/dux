@@ -1,13 +1,14 @@
 package org.dux.cli;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
  * Data class representing a symbolic link.
  */
-public class DuxConfigurationLink {
+public class DuxConfigurationLink implements Serializable {
 
     public Path getLink() {
         return link;
@@ -17,7 +18,7 @@ public class DuxConfigurationLink {
         return target;
     }
 
-    private Path link, target;
+    private final Path link, target;
 
     public DuxConfigurationLink(Path link, Path target) {
         this.link = link;

@@ -1,12 +1,14 @@
 package org.dux.cli;
 
+import java.io.Serializable;
+
 /**
  * Data class representing an environment variable that Dux believes is relevant to a build.
  */
-public class DuxConfigurationVar {
-    private String name;
-    private String value;
-    private boolean appendWithPathSeparator;
+public class DuxConfigurationVar implements Serializable {
+    private final String name;
+    private final String value;
+    private final boolean appendWithPathSeparator;
 
     /**
      * @param name the name of the environment variable, e.g. PATH
