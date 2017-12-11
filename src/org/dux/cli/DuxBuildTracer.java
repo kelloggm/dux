@@ -10,13 +10,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.dux.cli.DuxFileHasher.hashFile;
 
@@ -40,14 +43,39 @@ public class DuxBuildTracer {
     private Map<Path, HashCode> fileHashes;
 
     private Map<Path, Path> links;
+    private Map<Path, String> envPaths;
+    private Set<String> envVarsWithPathSep;
+
+    private Set<DuxConfigurationVar> varsToSave;
 
     public DuxBuildTracer(List<String> args) {
         ArrayList<String> argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
         argList.addAll(args);
         this.args = argList.toArray(new String[0]);
 
-        fileHashes = new HashMap<Path, HashCode>();
+        fileHashes = new HashMap<>();
         links = new HashMap<>();
+        envPaths = new HashMap<>();
+        envVarsWithPathSep = new HashSet<>();
+        varsToSave = new HashSet<>();
+
+        // initialize the map of environment variable values (as paths) to the names of the variables
+        String pathSeparator = System.getProperty("path.separator");
+        for (Map.Entry<String, String> var : System.getenv().entrySet()) {
+            String value = var.getValue();
+            String[] values = value.split(pathSeparator);
+            if (values.length > 1) {
+                envVarsWithPathSep.add(var.getKey());
+            }
+            for (String path : values) {
+                try {
+                    Path p = Paths.get(path).normalize();
+                    envPaths.put(p, var.getKey());
+                } catch (InvalidPathException) {
+                    // an environment variable had an invalid path as its value. This is fine.
+                }
+            }
+        }
     }
 
     private static boolean pathInSubdirectory(Path parent, Path candidate)
@@ -137,6 +165,10 @@ public class DuxBuildTracer {
             Path link = entry.getKey();
             Path target = entry.getValue();
             config.addLink(new DuxConfigurationLink(link, target));
+        }
+
+        for (DuxConfigurationVar var : varsToSave) {
+            config.addVar(var);
         }
     }
 
@@ -246,6 +278,13 @@ public class DuxBuildTracer {
         DuxCLI.logger.debug("checking if file already hashed");
         if (fileHashes.containsKey(p)) {
             return false;
+        }
+
+        // does this path contain an environment variable that we want to save the value of?
+        if (envPaths.containsKey(p.getParent())) {
+            String name = envPaths.get(p);
+            DuxConfigurationVar var = new DuxConfigurationVar(name, p.toString(), envVarsWithPathSep.contains(name));
+            varsToSave.add(var);
         }
 
         return true;

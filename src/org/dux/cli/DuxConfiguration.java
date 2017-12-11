@@ -27,11 +27,13 @@ public class DuxConfiguration implements Serializable,
     final String projectName;
     final List<DuxConfigurationEntry> entries;
     final List<DuxConfigurationLink> links;
+    final List<DuxConfigurationVar> vars;
 
     public DuxConfiguration(@Nullable final String projectName) {
         this.projectName = projectName;
         this.entries = new ArrayList<>();
         this.links = new ArrayList<>();
+        this.vars = new ArrayList<>();
     }
 
     /**
@@ -47,6 +49,14 @@ public class DuxConfiguration implements Serializable,
     public void addLink(final DuxConfigurationLink entry) {
         links.add(entry);
     }
+
+    /**
+     * Adds {@code entry} to this configuration
+     */
+    public void addVar(final DuxConfigurationVar entry) {
+         vars.add(entry);
+    }
+
 
     /**
      * Sends all configuration entry to the backing store. Does not filter.
@@ -65,11 +75,13 @@ public class DuxConfiguration implements Serializable,
     /**
      * Iterator over underlying entries
      */
-    public Iterator<DuxConfigurationEntry> iterator() {
-        return entries.iterator();
+    public Iterable<DuxConfigurationEntry> entries() {
+        return entries;
     }
 
     public Iterable<DuxConfigurationLink> links() { return links; }
+
+    public Iterable<DuxConfigurationVar> vars() { return vars; }
 
     @Override
     public String toString() {
@@ -85,6 +97,12 @@ public class DuxConfiguration implements Serializable,
 
         for (DuxConfigurationLink link : links) {
             result += link + ", \n";
+        }
+        result = result.substring(0, result.length() - 1);
+        result += "}, vars={";
+
+        for (DuxConfigurationVar var : vars) {
+            result += var + ", \n";
         }
         result = result.substring(0, result.length() - 1);
         result += "}";

@@ -27,7 +27,7 @@ public class DuxConfigChecker {
      * @throws FileNotFoundException    if a fetch fails
      */
     public void checkConfig(DuxConfiguration config) throws IOException, FileNotFoundException {
-        for (DuxConfigurationEntry entry : config) {
+        for (DuxConfigurationEntry entry : config.entries()) {
             // if file does not exist, try to fetch it
             DuxCLI.logger.debug("Checking if file {} exists", entry.path.toString());
             if (!entry.path.exists()) {
@@ -52,9 +52,15 @@ public class DuxConfigChecker {
 
             DuxCLI.logger.debug("{} exists and hash matches", entry.path.toString());
         }
+
         for (DuxConfigurationLink link : config.links()) {
             DuxCLI.logger.debug("reading a link: {}", link);
             link.create();
         }
+
+        for (DuxConfigurationVar var : config.vars()) {
+            DuxCLI.logger.info("required environment variable: {}", var);
+        }
+
     }
 }
