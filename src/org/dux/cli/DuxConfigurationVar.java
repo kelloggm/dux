@@ -45,4 +45,25 @@ public class DuxConfigurationVar implements Serializable {
            pb.environment().put(name, value);
        }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DuxConfigurationVar that = (DuxConfigurationVar) o;
+
+        if (appendWithPathSeparator != that.appendWithPathSeparator) return false;
+        if (!name.equals(that.name)) return false;
+        return value.equals(that.value);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + value.hashCode();
+        result = 31 * result + (appendWithPathSeparator ? 1 : 0);
+        return result;
+    }
 }

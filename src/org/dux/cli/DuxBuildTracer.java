@@ -204,7 +204,7 @@ public class DuxBuildTracer {
             Path p = Paths.get(path).normalize();
 
             if (fOpenOrExec) {
-                if (canHashPath(p, blacklist, includeProjDir)) {
+                if ((p = canHashPath(p, blacklist, includeProjDir)) != null) {
                     DuxCLI.logger.debug("generating hash");
                     try {
                         HashCode hash = hashFile(path);
@@ -229,7 +229,7 @@ public class DuxBuildTracer {
 
                 Path pTarget = Paths.get(pathTarget).normalize();
                 // if we can't or don't want to hash the target, then don't include this symbolic link.
-                if (canHashPath(pTarget, blacklist, includeProjDir)) {
+                if ((p =canHashPath(pTarget, blacklist, includeProjDir)) != null) {
                     links.put(p, pTarget);
                 }
 
@@ -239,19 +239,22 @@ public class DuxBuildTracer {
         DuxCLI.logger.debug("completed recording of calls");
     }
 
-    private boolean canHashPath(Path p, DuxTraceBlacklist blacklist, boolean includeProjDir) throws IOException{
+    /**
+     * null return indicates failure. You must check the return value.
+     */
+    private Path canHashPath(Path p, DuxTraceBlacklist blacklist, boolean includeProjDir) throws IOException{
 
         // check for blacklisted files
         if (blacklist.contains(p)) {
             DuxCLI.logger.debug("{} is blacklisted, ignoring", p.toString());
-            return false;
+            return null;
         }
 
         // we only want to hash regular files
         DuxCLI.logger.debug("checking if file is a regular file");
         if (!Files.isRegularFile(p)) {
             DuxCLI.logger.debug("{} is not a regular file", p.toString());
-            return false;
+            return null;
         }
 
         Path currentDir = Paths.get(".").toAbsolutePath().normalize();
@@ -259,7 +262,7 @@ public class DuxBuildTracer {
         // disregard project files (heuristic: they're not dependencies)
         if (!includeProjDir && pathInSubdirectory(currentDir, p)) {
             DuxCLI.logger.debug("{} is in the current project directory", p.toString());
-            return false;
+            return null;
         }
 
         // we want to relativize the path if it seems like it could be user-specific
@@ -277,7 +280,7 @@ public class DuxBuildTracer {
         // don't hash if it's already present
         DuxCLI.logger.debug("checking if file already hashed");
         if (fileHashes.containsKey(p)) {
-            return false;
+            return null;
         }
 
         // does this path contain an environment variable that we want to save the value of?
@@ -287,6 +290,6 @@ public class DuxBuildTracer {
             varsToSave.add(var);
         }
 
-        return true;
+        return p;
     }
 }
