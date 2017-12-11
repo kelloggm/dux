@@ -2,9 +2,13 @@ package org.dux.cli;
 
 import com.google.common.hash.HashCode;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,13 +83,37 @@ public class DuxBuildTracer {
         return sharedPrefixLength >= minPrefixLength;
     }
 
+    // https://stackoverflow.com/questions/1732455/redirect-process-output-to-stdout
+    class StreamGobbler extends Thread {
+        InputStream is;
+
+        // reads everything from is until empty.
+        StreamGobbler(InputStream is) {
+            this.is = is;
+        }
+
+        public void run() {
+            try {
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader br = new BufferedReader(isr);
+                String line=null;
+                while ( (line = br.readLine()) != null)
+                    System.out.println(line);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+    }
+
     public void trace(boolean includeProjDir, boolean includeDefaultBlacklist) throws IOException, InterruptedException {
         DuxCLI.logger.debug("beginning a trace, getting runtime");
         DuxCLI.logger.debug("trace params: {}, {}", includeProjDir, includeDefaultBlacklist);
         Runtime rt = Runtime.getRuntime();
         DuxCLI.logger.debug("runtime acquired, executing program");
         Process proc = rt.exec(args);
+        StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream());
         DuxCLI.logger.debug("waiting for build to terminate");
+        outputGobbler.start();
         proc.waitFor();
         DuxCLI.logger.debug("Loading trace blacklist");
         DuxTraceBlacklist blacklist = new DuxTraceBlacklist(includeDefaultBlacklist);
