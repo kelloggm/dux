@@ -31,7 +31,9 @@ in high-quality tools for these activities. However, an often-overlooked step in
 building code is \textit{dependency management}---the process of setting up the
 environment so that the build can succeed. We argue that this process should be
 treated as a separate problem from compiling and testing---the traditional domain
-of build systems. Instead, we propose a \textit{build orchestration tool}, called
+of build systems.
+
+Instead, we present a \textit{build orchestration tool}, called
 Dux, which focuses on the dependency management problem and then delegates to a
 traditional build system for compiling and testing. Dux observes a successful
 build for a project, and writes the information necessary to reproduce the build
@@ -41,13 +43,16 @@ a dependency that is not in Dux's file system, it uploads a copy of the dependen
 and indexes it by its hash. By reading the configuration file, Dux can reproduce 
 the build of the project on a new system by checking the system for the required 
 dependencies, and downloading any missing ones using the copy created when creating 
-the configuration file, trivially permitting easy, reproducible builds.
+the configuration file, permitting easy, reproducible builds. Our present implementation,
+which reads environmental variables and uses \texttt{strace} to track opened and
+executed files during a build, is able to automatically reproduce builds of open-
+source projects with external dependencies.
 
 \end{abstract}
 
 \section{Introduction}
 
-Modern build systems typically combine two functions:
+                Modern build systems typically combine two functions:
 setting up the environment and ensuring dependencies are available (\textit{build orchestration})
 and compiling and testing (\textit{building}).
 Existing tools are very good at the latter, but often fail at the former;
@@ -82,7 +87,7 @@ our proposed tool makes migrating an existing project a push-button task.
 
 \subsection{Migration}
 
-Migrating a project to use Dux is simple.
+Migrating a project to use Dux is meant to be simple.
 The developer demonstrates a build to Dux by providing a command (e.g. \texttt{ant build-and-test}),
 and Dux executes that command in a sandbox, which records information about what the build does:
 which files it accesses, which environment variables it reads, which programs it executes, etc.
@@ -110,62 +115,79 @@ By separating these concerns, Dux can provide reproducible builds even for legac
 with significant customized build logic, because migrating to use Dux requires only
 demonstrating a correct build.
 
-\section{Project Timeline}
+\section{Implementation}
 
-For each project milestone, we have identified our goals for Dux by that time. The tool described
-in the previous sections is the final product.
+We implemented Dux as a tool in Java 8, using Google Cloud Storage to handle the storage of dependencies.
+Our development repository is public and may be accessed here: \url{https://github.com/kelloggm/dux/}.
 
-\subsection{First Checkpoint}
+\subsection{Recording a Build}
+At the heart of the tool is a call to \texttt{strace}, which writes to a temporary file. We have \texttt{strace}
+record calls to the \texttt{open}, \texttt{execve}, and \texttt{readlink} system calls, which are the relevant
+ones for our purposes: \texttt{open} because any necessary configuration files that building tools use will
+have to be opened to be read (it is sufficient to see which ones are opened without logging any of the
+calls to \texttt{read}); \texttt{execve} because build managers generally delegate different build steps by
+executing the necessarhy programs (such as compilers or scripts); and \texttt{readlink} to ensure that we
+properly reproduce the directory structure of dependencies by tracking symbolic links. By logging these system
+calls, Dux obtains a complete view of the files (both those read for information and executed) relevant to the
+build process and thus identify all dependencies.
 
-\begin{itemize}
-\item{Dux can observe a program and determine which \texttt{strace} events are relevant.}
-\item{A content-addressable file system has been identified or written
-that Dux will use to store depedency artifacts.}
-\item{A configuration file format has been identified.}
-\item{Dux can read a configuration file and print text that indicates what actions it
-should perform based on the configuration file, though it may not actually perform the actions.}
-\end{itemize}
+However, the build process may use information beyond that explicitly stored in configuration files; namely,
+many builds rely on environment variables (especially \texttt{PATH}), so Dux must capture those as well
+in spite of the fact that \texttt{strace} does not handle environmental variables. At present, Dux uses a
+simple heuristic to decide which environmental varialbes to store in the absence of a trace: it parses
+all environmental variables (searching for paths) and matches those paths against those logged by strace,
+the intent being to find environmental variables specifying dependencies so that build tools can find them.
+In the future, we may take a more robust approach by using another tool such as \texttt{ltrace} to trace
+exactly which environmental variables are read during the build process (since environmental variables may
+encode information other than paths).
 
-\subsection{Second Checkpoint}
+Once Dux has saved the environmental variables deemed relevant and has a trace of system calls, it parses
+the system calls to determine which files should be stored in the configuration and should be uploaded to
+the store. Storing a file (or symbolic link) in the configuration means simply adding an entry to the
+configuration file (\texttt{build.dux}), the entry consisting of a path to the dependency and a hash of the contents
+(except in the case of a symbolic link). Note that we ``relativize'' file paths to avoid overspecifity; namely,
+if a file path shares a prefix with the directory in which Dux is being invoked, we convert that path to
+a relative path. This heuristic is to avoid having paths in the configuration be overly user-specific, as in the
+case where a username forms part of a path; it is generally more useful to other users to have such paths be
+relative to the project directory.
 
-\begin{itemize}
-\item{Dux can observe a build and all files opened and all programs executed.}
-\item{Dux can send required dependencies to a central server, which uses a content-addressed filesystem to store them.}
-\item{Dux can convert a build observation into a configuration file that allows the build to be
-repeated on a machine without the required dependencies installed,
-by reading the configuration file and downloading the dependencies from the
-central server.}
-\item{Dux provides an abstraction of an underlying build system that supports at least one build systems.}
-\end{itemize}
+Because we only record \texttt{open}, \texttt{execve}, and \texttt{readlink} calls, all the
+calls that arise in the recorded trace are potentially relevant, though we will only process a file once
+and apply certain heuristics (optional) to reduce the workload. One heuristic is to disregard files located 
+in the directory where Dux is being invoked, since these are ``project files'' and thus not dependencies
+of the project. Another heuristic is to keep a ``blacklist'' of files that are often read during a build
+but seldom convey relevant information or vary spuriously between machines or setups. By default, the
+``blacklist'' consists only of \texttt{/proc/meminfo} (which contains information about the hardware's
+capability), though the default blacklist may be expanded to include other low-level files once we have
+run more builds and seen more examples of spurious ``dependencies''; the user may also create
+a file \texttt{.duxignore} to supplement the default blacklist with further files or directories for
+Dux to ignore when parsing \texttt{strace} output.
 
-\subsection{Final Project}
+Once Dux has parsed the \texttt{strace} output and written the relevant files and symbolic links to
+the local configuration file, Dux also uploads the logged dependencies to Google Cloud Storage (in a
+bucket specified by the user) for future use. We implement our storage as a ``content-addressable
+file system'' by naming files after their hashes, relying instead on the configuration file to recover
+the path information for each file; this way, a user can retrieve the contents of a file simply by 
+providing the hash logged in the configuration file.
 
-\begin{itemize}
-\item{Dux can observe a build and all files opened and all programs executed.}
-\item{Dux can distinguish relative and absolute paths.}
-\item{Dux can tell the difference between files part of the project and files that are not
-(i.e. the difference between build artifacts and dependencies’ artifacts).}
-\item{Dux can send required dependencies to a central server, which uses a content-addressed filesystem to store them.}
-\item{Dux can convert a build observation into a configuration file that allows the build to be
-repeated on a machine without the required dependencies installed,
-by reading the configuration file and downloading the dependencies from the
-central server and putting them in the expected places.}
-\item{Dux provides an abstraction of an underlying build system that supports at least two build systems.}
-\end{itemize}
+\subsection{Validating and Reproducing a Build}
+Reproducing a build is essentially the inverse process of that described above. Given a configuration file,
+Dux checks that the environmental variables described within are set appropriately and checks that every
+file listed in the configuration actually exists. If a file is missing, Dux pulls it in from Google Cloud
+Storage using the hash in the configuration file. If a file is present but has a different hash from that
+in the configuration, Dux warns the user but does not retrieve the file from cloud storage, since the file
+could potentially contain important or system-specific information that is not safe to overwrite.
 
-\subsection{Stretch Goals}
+Once Dux has validated its configuration, the user may run the build. If all has been set correctly, including
+symbolic links and environmental variables, the build should be able to proceed as before. There is an option
+in Dux to have the tool take care of running the build as well; in this case, the tool is able to set all
+logged environmental variables according to the configuration. (The tool is set up this way because a Java program
+is not allowed to overwrite variables in its outer environment directly; a Java program may instead have a new
+process be executed with an environment specially set.)
 
-\begin{itemize}
-\item{Dux includes a library that abstracts \texttt{strace}'s functionality, and is able to use a similar tool
-on at least one other platform.}
-\item{Dux can record the values of relevant environment variables in the configuration file,
-and reason about paths or chains of environment variable reads to capture a complete state.}
-\item{Dux provides an API for writing special handlers for particular dependencies. These handlers would be
-used as callbacks within the tool for finer-grained reasoning. For example, a user may wish to provide
-handlers for generating more informative messages when dealing with particular compilers or to parse
-environment variables to look for the presence of particular fields. At least on its own, \texttt{strace}
-is often a blunt instrument.}
-\end{itemize}
+\section{Evaluation}
+
+\section{Limitations}
 
 \section{Related Work}
 
