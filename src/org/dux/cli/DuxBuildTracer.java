@@ -284,13 +284,13 @@ public class DuxBuildTracer {
             return null;
         }
 
-        saveVarFromPath(p);
-        saveVarFromPath(p.toAbsolutePath().normalize());
+        saveVarFromPath(p, p);
+        saveVarFromPath(p.toAbsolutePath().normalize(), p);
 
         return p;
     }
 
-    private void saveVarFromPath(Path p) {
+    private void saveVarFromPath(Path p, Path toSave) {
         // does this path contain an environment variable that we want to save the value of?
 
         DuxCLI.logger.debug("checking whether {} is a key into the envPaths map", p);
@@ -298,7 +298,7 @@ public class DuxBuildTracer {
         if (envPaths.containsKey(p.getParent())) {
             String name = envPaths.get(p.getParent());
             DuxCLI.logger.debug("it is - to env var {}", name);
-            DuxConfigurationVar var = new DuxConfigurationVar(name, p.getParent().toString(), envVarsWithPathSep.contains(name));
+            DuxConfigurationVar var = new DuxConfigurationVar(name, toSave.getParent().toString(), envVarsWithPathSep.contains(name));
             varsToSave.add(var);
         }
     }
