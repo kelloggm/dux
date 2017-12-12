@@ -71,6 +71,7 @@ public class DuxBuildTracer {
                 try {
                     Path p = Paths.get(path).normalize();
                     envPaths.put(p, var.getKey());
+                    DuxCLI.logger.debug("path: {} | variable: {}");
                 } catch (InvalidPathException e) {
                     // an environment variable had an invalid path as its value. This is fine.
                 }
@@ -282,7 +283,7 @@ public class DuxBuildTracer {
         if (fileHashes.containsKey(p)) {
             return null;
         }
-        
+
         saveVarFromPath(p);
         saveVarFromPath(p.toAbsolutePath());
 
