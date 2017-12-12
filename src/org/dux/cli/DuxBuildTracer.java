@@ -212,7 +212,7 @@ public class DuxBuildTracer {
                         fileHashes.put(p, hash);
                     } catch (FileNotFoundException e) {
                         // must be a file created and deleted during the build
-                        return;
+                        continue;
                     }
                 }
             } else if (fReadlink) {
