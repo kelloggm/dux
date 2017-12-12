@@ -284,8 +284,15 @@ public class DuxBuildTracer {
             return null;
         }
 
+        // We need to save both variables that include a file that's being referenced
+        // and those that include a directory that contains such a file.
+        // This is a heuristic, but the latter is useful for e.g. the PATH
+
         saveVarFromPath(p, p);
         saveVarFromPath(p.toAbsolutePath().normalize(), p);
+
+        saveVarFromPath(p.getParent(), p.getParent());
+        saveVarFromPath(p.toAbsolutePath().normalize().getParent(), p.getParent());
 
         return p;
     }
@@ -295,10 +302,10 @@ public class DuxBuildTracer {
 
         DuxCLI.logger.debug("checking whether {} is a key into the envPaths map", p);
 
-        if (envPaths.containsKey(p.getParent())) {
-            String name = envPaths.get(p.getParent());
+        if (envPaths.containsKey(p)) {
+            String name = envPaths.get(p);
             DuxCLI.logger.debug("it is - to env var {}", name);
-            DuxConfigurationVar var = new DuxConfigurationVar(name, toSave.getParent().toString(), envVarsWithPathSep.contains(name));
+            DuxConfigurationVar var = new DuxConfigurationVar(name, toSave.toString(), envVarsWithPathSep.contains(name));
             varsToSave.add(var);
         }
     }
