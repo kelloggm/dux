@@ -71,7 +71,7 @@ public class DuxBuildTracer {
                 try {
                     Path p = Paths.get(path).normalize();
                     envPaths.put(p, var.getKey());
-                    DuxCLI.logger.debug("path: {} | variable: {}");
+                    DuxCLI.logger.debug("path: {} | variable: {}", p, var.getKey());
                 } catch (InvalidPathException e) {
                     // an environment variable had an invalid path as its value. This is fine.
                 }
