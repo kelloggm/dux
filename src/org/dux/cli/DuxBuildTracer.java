@@ -282,14 +282,19 @@ public class DuxBuildTracer {
         if (fileHashes.containsKey(p)) {
             return null;
         }
+        
+        saveVarFromPath(p);
+        saveVarFromPath(p.toAbsolutePath());
 
+        return p;
+    }
+
+    private void saveVarFromPath(Path p) {
         // does this path contain an environment variable that we want to save the value of?
         if (envPaths.containsKey(p.getParent())) {
             String name = envPaths.get(p.getParent());
             DuxConfigurationVar var = new DuxConfigurationVar(name, p.getParent().toString(), envVarsWithPathSep.contains(name));
             varsToSave.add(var);
         }
-
-        return p;
     }
 }
