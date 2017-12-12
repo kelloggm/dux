@@ -189,6 +189,21 @@ process be executed with an environment specially set.)
 
 \section{Limitations}
 
+Dux takes a rather reductive view of the build process, considering only the particular files that are read
+and programs that are executed in one build on one system. As such, there are some dimensions to building that
+Dux may fail to capture, such as logic that branches on different system configurations or present tools (e.g.,
+having different possible builds depending on whether GCC or Clang is present on the system). In the case of
+a build supporting different possible configurations, Dux may incorrectly label a machine as lacking proper
+configuration when, in fact, the build may very well succeed. It is not obvious how Dux can be modified to address
+this; a user would have to keep around different configuration files for different versions and know which
+Dux configuration to pass around as appropriately.
+
+Since Dux uploads dependencies without regard for their particular use, this may also lead to broken builds 
+if it is applied on a system different from the one that was used to produce the configuration for a build, 
+since Dux will pull in binaries that might have been compiled for a different system. A modification that
+might hedge against this case would be keeping hashes of system metadata in configurations and knowing
+that an executed binary from another system should likely not be pulled in to a different one.
+
 \section{Related Work}
 
 Several modern build systems include a dependency management strategy. Tools like
