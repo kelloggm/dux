@@ -1,6 +1,8 @@
 package org.dux.cli;
 
 import java.io.Serializable;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Data class representing an environment variable that Dux believes is relevant to a build.
@@ -34,15 +36,16 @@ public class DuxConfigurationVar implements Serializable {
      * Sets this environment variable in the environment of a process under construction.
      */
     public void set(ProcessBuilder pb) {
+       Path absolutePath = Paths.get(value).toAbsolutePath().normalize();
        if (appendWithPathSeparator) {
            String current = pb.environment().get(name);
            if (current != null) {
-               pb.environment().put(name, value + System.getProperty("path.separator") + current);
+               pb.environment().put(name, absolutePath.toString() + System.getProperty("path.separator") + current);
            } else {
-               pb.environment().put(name, value);
+               pb.environment().put(name, absolutePath.toString());
            }
        } else {
-           pb.environment().put(name, value);
+           pb.environment().put(name, absolutePath.toString());
        }
     }
 
