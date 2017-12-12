@@ -49,6 +49,14 @@ public class DuxOptions extends OptionsBase {
     public boolean checkConfig;
 
     @Option(
+            name = "launch",
+            abbrev = 'l',
+            help = "When checking the configuration, launch the build after checking.",
+            defaultValue = "false"
+    )
+    public boolean launch;
+
+    @Option(
             name = "name",
             abbrev = 'n',
             help = "A name to associate with the generated config file.",

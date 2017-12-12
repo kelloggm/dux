@@ -55,7 +55,7 @@ public class DuxCLI {
                 logger.debug("checking configuration...");
                 DuxConfigChecker checker = new DuxConfigChecker(backingStore);
                 try {
-                    checker.checkConfig(config);
+                    checker.checkConfig(config, options.launch);
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
                     return;
@@ -80,7 +80,7 @@ public class DuxCLI {
             logger.debug("tracing complete");
             String displayName = options.displayName.equals("NOT SET") ? null : options.displayName;
             logger.debug("display name computed: {}", displayName);
-            DuxConfiguration config = new DuxConfiguration(displayName);
+            DuxConfiguration config = new DuxConfiguration(displayName, options.command);
             logger.debug("new configuration created");
             tracer.dumpToConfiguration(config);
             logger.debug("finished dumping trace to configuration");

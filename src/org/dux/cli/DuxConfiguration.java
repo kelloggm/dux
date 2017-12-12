@@ -24,15 +24,17 @@ import org.dux.backingstore.DuxBackingStore;
 public class DuxConfiguration implements Serializable {
     @Nullable
     final String projectName;
-    final List<DuxConfigurationEntry> entries;
-    final List<DuxConfigurationLink> links;
-    final List<DuxConfigurationVar> vars;
+    final String command;
+    private final List<DuxConfigurationEntry> entries;
+    private final List<DuxConfigurationLink> links;
+    private final List<DuxConfigurationVar> vars;
 
-    public DuxConfiguration(@Nullable final String projectName) {
+    public DuxConfiguration(@Nullable final String projectName, final String command) {
         this.projectName = projectName;
         this.entries = new ArrayList<>();
         this.links = new ArrayList<>();
         this.vars = new ArrayList<>();
+        this.command = command;
     }
 
     /**
@@ -86,6 +88,7 @@ public class DuxConfiguration implements Serializable {
     public String toString() {
         String result = "DuxConfiguration{" +
                 "projectName='" + projectName + '\'' +
+                "command='" + command + '\'' +
                 ", entries={";
 
         for (DuxConfigurationEntry entry : entries) {
