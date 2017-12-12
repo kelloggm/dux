@@ -63,11 +63,12 @@ public class DuxConfigChecker {
         }
 
         if (launch) {
-            DuxCLI.logger.debug("executing build: {}" + config.command);
+            DuxCLI.logger.debug("executing build: {}", config.command);
             ProcessBuilder pb = new ProcessBuilder(config.command);
             for (DuxConfigurationVar var : config.vars()) {
                 var.set(pb);
             }
+            DuxCLI.logger.debug("PATH for launched build: {}", pb.environment().get("PATH"));
             pb.inheritIO();
             pb.start();
         }
