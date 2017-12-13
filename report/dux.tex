@@ -11,6 +11,7 @@
 \documentclass[10pt,conference]{IEEEtran}
 
 \usepackage{graphicx}
+\graphicspath{ {images/} }
 \usepackage{myref}
 \usepackage{booktabs}
 \usepackage{url}
@@ -85,6 +86,11 @@ our proposed tool makes migrating an existing project a push-button task.
 
 \section{Overview of Technical Approach}
 
+\begin{figure}
+\includegraphics[width=\columnwidth]{DUX}
+\caption{Dux's very cute logo.}
+\end{figure}
+
 \subsection{Migration}
 
 Migrating a project to use Dux is meant to be simple.
@@ -123,6 +129,12 @@ We implemented Dux as a tool in Java 8, using Google Cloud Storage to handle the
 Our development repository is public and may be accessed here: \url{https://github.com/kelloggm/dux/}.
 
 \subsection{Recording a Build}
+
+\begin{figure}
+\includegraphics[width=\columnwidth]{duxtrace}
+\caption{The steps to trace a build with Dux.}
+\end{figure}
+
 At the heart of the tool is a call to \texttt{strace}, which writes to a temporary file. We have \texttt{strace}
 record calls to the \texttt{open}, \texttt{execve}, \texttt{readlink}, and \texttt{stat} system calls,
 which are the relevant
@@ -182,6 +194,12 @@ only be uploaded once. We designed this "backend" to be modular, and implementin
 "upload" and "download" operations that take a hash and a target file.
 
 \subsection{Validating and Reproducing a Build}
+
+\begin{figure}
+\includegraphics[width=\columnwidth]{duxcheck}
+\caption{The steps to replaying a build with Dux.}
+\end{figure}
+
 Reproducing a build is essentially the inverse process of that described above. Given a configuration file,
 Dux checks that the environmental variables described within are set appropriately and checks that every
 file listed in the configuration actually exists. If a file is missing, Dux pulls it in from the backing store
