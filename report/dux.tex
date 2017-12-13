@@ -89,7 +89,7 @@ our proposed tool makes migrating an existing project a push-button task.
 
 Migrating a project to use Dux is meant to be simple.
 The developer demonstrates a build to Dux by providing a command (e.g. \texttt{ant build-and-test}
-or \texttt{./configure && make && make install}),
+or \texttt{./configure \&\& make \&\& make install}),
 and Dux executes that command in a sandbox, which records information about what the build does:
 which files it accesses, which environment variables it reads, which programs it executes, etc.
 Dux uses Linux's \texttt{strace} utility to perform this analysis---though this limits Dux to
@@ -200,7 +200,38 @@ to inspect the configuration before actually executing the build (which is espec
 \section{Evaluation}
 
 To evaluate our prototype of Dux, we used it to reproduce builds for two programs: a simple, UNIX-like shell and
-CIL (the C Intermediate Library)\footnote{\URL{https://github.com/cil-project/cil}}, a
+CIL (the C Intermediate Library)\footnote{\url{https://github.com/cil-project/cil}}, an abstraction of C programs
+that permits developers of static analyses to more easily reason about C programs. The simple shell was written in
+C and built using make. Its only dependency is on the system's \texttt{readline} library, which is already
+present on most UNIX systems. Though this test is not very interesting on its own, it allowed us to test Dux in
+a variety of configurations and write simple integration tests\footnote{\url{https://travis-ci.org/kelloggm/dux}}
+that demonstrate that Dux "does the right thing" in very simple cases.
+
+To test that Dux is capable of building larger-scale projects, we tested it on CIL. CIL is a reasonably-sized
+project: it contains about 120,000 lines of mostly OCaml and C code. It has a number of external dependencies,
+including on OCaml itself (along with utility tools like \texttt{opam} and \texttt{ocamlfind}), as well as on
+various C compilers. It builds using the \texttt{./configure \&\& make \&\& make install} style common to UNIX
+utilities. Initially, we had difficulty getting Dux to reproduce builds of CIL. After adding support for symbolic
+links, \texttt{stat}, and environment variables, we were able to successfully get Dux to reproduce a build of CIL.
+We performed this experiment on a copy of the UW HomeVM for Autumn, 2017; when repeating the build, we deployed
+a new copy of the VM (i.e. the underlying OSes were identical). However, it is worth noting that we were unable
+to reproduce the build unless the build that was traced started in a fresh copy of the repository, because
+configure performs a great deal of first-time setup that Dux fails to capture in subsequent builds (because it
+does not happen). Mitigating this issue is future work.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ |c|c|c| }
+ \hline
+ Project & Lines of Code & Files \\ \hline \hline
+ shell.c & 165 & 2 \\ \hline
+ CIL & 121740 & 952 \\
+ \hline
+\end{tabular}
+\caption{The sizes of the two programs we used to test that Dux can build projects. Dux was able to repeatedly
+build both projects.}
+\end{center}
+\end{table}
 
 \section{Limitations}
 
