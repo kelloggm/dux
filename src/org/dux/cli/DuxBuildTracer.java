@@ -35,7 +35,7 @@ public class DuxBuildTracer {
     private static final String[] STRACE_CALL = {
             "strace",
             "-f",                        // trace subprocesses as well
-            "-e", "trace=open,execve,readlink",  // we care about calls to open or exec
+            "-e", "trace=open,execve,readlink,fstat,stat,lstat",  // we care about calls to open or exec
             "-o", TMP_FILE               // write to tmp file
     };
 
@@ -72,6 +72,8 @@ public class DuxBuildTracer {
                     Path p = Paths.get(path).normalize();
                     envPaths.put(p, var.getKey());
                     DuxCLI.logger.debug("path: {} | variable: {}", p, var.getKey());
+                    // As a temp measure, save all environment variables. TODO be more precise.
+                    varsToSave.add(new DuxConfigurationVar(var.getKey(), p.toString(), values.length > 1));
                 } catch (InvalidPathException e) {
                     // an environment variable had an invalid path as its value. This is fine.
                 }
@@ -185,6 +187,7 @@ public class DuxBuildTracer {
             DuxCLI.logger.debug("checking if the call is an open or exec");
             boolean fOpenOrExec = c.call.equals("open") || c.call.matches("exec.*");
             boolean fReadlink = c.call.equals("readlink");
+            boolean fStat = c.call.matches(".*stat");
             if (!fOpenOrExec && !fReadlink) {
                 continue;
             }
@@ -204,7 +207,7 @@ public class DuxBuildTracer {
 
             Path p = Paths.get(path).normalize();
 
-            if (fOpenOrExec) {
+            if (fOpenOrExec || fStat) {
                 if ((p = canHashPath(p, blacklist, includeProjDir)) != null) {
                     DuxCLI.logger.debug("generating hash");
                     try {
@@ -284,8 +287,15 @@ public class DuxBuildTracer {
             return null;
         }
 
+        // We need to save both variables that include a file that's being referenced
+        // and those that include a directory that contains such a file.
+        // This is a heuristic, but the latter is useful for e.g. the PATH
+
         saveVarFromPath(p, p);
         saveVarFromPath(p.toAbsolutePath().normalize(), p);
+
+        saveVarFromPath(p.getParent(), p.getParent());
+        saveVarFromPath(p.toAbsolutePath().normalize().getParent(), p.getParent());
 
         return p;
     }
@@ -295,10 +305,10 @@ public class DuxBuildTracer {
 
         DuxCLI.logger.debug("checking whether {} is a key into the envPaths map", p);
 
-        if (envPaths.containsKey(p.getParent())) {
-            String name = envPaths.get(p.getParent());
+        if (envPaths.containsKey(p)) {
+            String name = envPaths.get(p);
             DuxCLI.logger.debug("it is - to env var {}", name);
-            DuxConfigurationVar var = new DuxConfigurationVar(name, toSave.getParent().toString(), envVarsWithPathSep.contains(name));
+            DuxConfigurationVar var = new DuxConfigurationVar(name, toSave.toString(), envVarsWithPathSep.contains(name));
             varsToSave.add(var);
         }
     }
