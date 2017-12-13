@@ -233,7 +233,7 @@ build both projects.}
 \end{center}
 \end{table}
 
-\section{Limitations}
+\section{Limitations and Future Work}
 
 Dux takes a rather reductive view of the build process, considering only the particular files that are read
 and programs that are executed in one build on one system. As such, there are some dimensions to building that
@@ -242,43 +242,24 @@ having different possible builds depending on whether GCC or Clang is present on
 a build supporting different possible configurations, Dux may incorrectly label a machine as lacking proper
 configuration when, in fact, the build may very well succeed. It is not obvious how Dux can be modified to address
 this; a user would have to keep around different configuration files for different versions and know which
-Dux configuration to pass around as appropriately.
+Dux configuration to pass around as appropriately. That said, this is a possible avenue of future work. One possible
+scheme could include the production of a Dux configuration file for each supported operating system by the
+developers, and a check within Dux of which OS it is operating on. Dux could then choose the appropriate
+configuration file and proceed with the build.
 
 Since Dux uploads dependencies without regard for their particular use, this may also lead to broken builds 
 if it is applied on a system different from the one that was used to produce the configuration for a build, 
 since Dux will pull in binaries that might have been compiled for a different system. A modification that
 might hedge against this case would be keeping hashes of system metadata in configurations and knowing
-that an executed binary from another system should likely not be pulled in to a different one.
+that an executed binary from another system should likely not be pulled in to a different one. It may also
+be possible for Dux to store more information in the cloud---for instance, Dux could keep track of the names
+of dependencies and what kind of system they came from, and try to substitue appropriate ones if the build does
+not work the first time. So, for instance, if the configuraton file calls for \texttt{gcc} generated an OSX machine,
+but the target machine is running Ubuntu, Dux could search in its cloud for a copy of \texttt{gcc} that was
+generated on Ubuntu. While our prototype does not currently attempt to implement this feature, a complete
+implementation of Dux probably would.
 
-\section{Related Work}
-
-Several modern build systems include a dependency management strategy. Tools like
-Maven~\cite{Maven}, Gradle~\cite{Gradle}, Bazel~\cite{blaze}, or Buck~\cite{buck}
-are primarily systems for building and testing software, but each includes the
-ability to specify dependencies manually in some kind of configuration file.
-Ivy~\cite{Ivy} is exclusively a dependency management tool, but still requires
-a manually written configuration file.
-Unlike Dux's configuration files, which are automatically generated, the configuration
-files for these tools use domain-specific languages that developers have to learn,
-write, and maintain. Some tools (such as Bazel) also include sandboxing tools
-that force the build to only use dependencies explicitly specified in the
-configuration file.
-
-Most recent advances in build technology have come from industry, not from
-academia. Adams and McIntosh breifly cover build systems in their survey of
-release engineering~\cite{adams2016modern}, in an effort to urge academics to
-pay more attention to the work going on in industry. Cox et al. examined how
-to prioritize updating dependencies, but did not attempt to fix build issues~\cite{cox2015measuring}.
-McIntosh et al. built a classifier to determine when changes to the build
-system would be necessary based on the changes introduced to source code~\cite{mcintosh2014mining}.
-Seo et al. performed an empirical study at Google, and determined that more
-than 50\% of build breakages were caused by dependency errors~\cite{googlebuilderrors}.
-This is especially motivating for our work, since Google's Bazel build system
-is considered the industry standard---and dependency issues are their most
-common build error.
-
-\section{Future Work}
-A key question remains, even once Dux is implemented: how does Dux deal with
+A key limitation of our current prototype is: how does Dux deal with
 change, either in the environment or in the code it is building? We view building
 the version of Dux we described here as the first step towards an adaptive
 build system that can repair build scripts when they fail, using techniques
@@ -292,6 +273,39 @@ automated repair tools. By combining a tool like Dux with a build script repair
 system, one can imagine a build tool that can correctly deploy software even in
 the face of different dependency requirements or a different platform automatically,
 making deploying software in new environments a much simpler process.
+
+\section{Related Work}
+
+Several modern build systems include a dependency management strategy. Tools like
+Maven~\cite{Maven}, Gradle~\cite{Gradle}, Bazel~\cite{blaze}, or Buck~\cite{buck}
+are primarily systems for building and testing software, but each includes the
+ability to specify dependencies manually in some kind of configuration file.
+Ivy~\cite{Ivy} is exclusively a dependency management tool, but still requires
+a manually written configuration file.
+Unlike Dux's configuration files, which are automatically generated, the configuration
+files for these tools use domain-specific languages that developers have to learn,
+write, and maintain. Some tools (such as Bazel) also include sandboxing tools
+that force the build to only use dependencies explicitly specified in the
+configuration file. The Homebrew package manager for Mac OSX also includes
+a system called "bottles", which resemble Dux configuration entries\cite{homebrew}.
+Each bottle, like a dependency in Dux, represents a binary that can be downloaded
+from a central server, and Homebrew includes some automated tooling to help
+developers create the scripts used to download dependencies. However,
+Homebrew is focused entirely on deploying applications to a single hardware/software
+combination, and lacks the flexibility and generality of Dux.
+
+Most recent advances in build technology have come from industry, not from
+academia. Adams and McIntosh breifly cover build systems in their survey of
+release engineering~\cite{adams2016modern}, in an effort to urge academics to
+pay more attention to the work going on in industry. Cox et al. examined how
+to prioritize updating dependencies, but did not attempt to fix build issues~\cite{cox2015measuring}.
+McIntosh et al. built a classifier to determine when changes to the build
+system would be necessary based on the changes introduced to source code~\cite{mcintosh2014mining}.
+Seo et al. performed an empirical study at Google, and determined that more
+than 50\% of build breakages were caused by dependency errors~\cite{googlebuilderrors}.
+This is especially motivating for our work, since Google's Bazel build system
+is considered the industry standard---and dependency issues are their most
+common build error.
 
 \section{References}
 
