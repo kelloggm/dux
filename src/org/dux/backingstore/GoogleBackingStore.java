@@ -98,6 +98,10 @@ public class GoogleBackingStore implements DuxBackingStore {
             }
         }
         writeTo.close();
+        // bad TODO pls fix
+        targetFile.setExecutable(true);
+        targetFile.setReadable(true);
+        targetFile.setWritable(true);
         return true;
     }
 
