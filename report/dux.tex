@@ -131,7 +131,9 @@ Our development repository is public and may be accessed here: \url{https://gith
 \subsection{Recording a Build}
 
 \begin{figure}
-\includegraphics[width=\columnwidth]{duxtrace}
+\begin{center}
+\includegraphics[scale=0.3]{duxtrace}
+\end{center}
 \caption{The steps to trace a build with Dux.}
 \end{figure}
 
@@ -237,7 +239,7 @@ to reproduce the build unless the build that was traced started in a fresh copy 
 configure performs a great deal of first-time setup that Dux fails to capture in subsequent builds (because it
 does not happen). Mitigating this issue is future work.
 
-\begin{table}
+\begin{figure}
 \begin{center}
 \begin{tabular}{ |c|c|c| }
  \hline
@@ -246,10 +248,10 @@ does not happen). Mitigating this issue is future work.
  CIL & 121740 & 952 \\
  \hline
 \end{tabular}
+\end{center}
 \caption{The sizes of the two programs we used to test that Dux can build projects. Dux was able to repeatedly
 build both projects.}
-\end{center}
-\end{table}
+\end{figure}
 
 \section{Limitations and Future Work}
 
