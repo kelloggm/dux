@@ -305,6 +305,11 @@ public class DuxBuildTracer {
 
         DuxCLI.logger.debug("checking whether {} is a key into the envPaths map", p);
 
+        // nothing to do if nothing to save! this can happen when p is root and toSave is its parent
+        if (toSave == null) {
+            return;
+        }
+
         if (envPaths.containsKey(p)) {
             String name = envPaths.get(p);
             DuxCLI.logger.debug("it is - to env var {}", name);
