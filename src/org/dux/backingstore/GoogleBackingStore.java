@@ -62,7 +62,7 @@ public class GoogleBackingStore implements DuxBackingStore {
         }
         PrintStream writeTo;
         File targetFile = new File(target);
-        if (!targetFile.getParentFile().mkdirs()) {
+        if (targetFile.getParentFile() == null || !targetFile.getParentFile().mkdirs()) {
             DuxCLI.logger.debug("could not create directories needed to write to {}.", target);
         }
         try {
