@@ -2,13 +2,12 @@ package org.dux.cli;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * An object responsible for determining what files should be excluded
@@ -20,53 +19,53 @@ import java.util.HashSet;
 public class DuxTraceBlacklist {
     private static final String BLACKLIST_FILE_NAME = ".duxignore";
     private static final String[] DEFAULT_LIST = {
-	"/proc/meminfo" // system specs
+            "/proc/meminfo" // system specs
     };
 
     private Set<Path> paths;
 
     public DuxTraceBlacklist(boolean includeDefaults) throws IOException {
-	paths = new HashSet<Path>();
+        paths = new HashSet<Path>();
 
-	if (includeDefaults) {
-	    for (String path : DEFAULT_LIST) {
-		paths.add(Paths.get(path).toAbsolutePath().normalize());
-	    }
-	}
+        if (includeDefaults) {
+            for (String path : DEFAULT_LIST) {
+                paths.add(Paths.get(path).toAbsolutePath().normalize());
+            }
+        }
 
-	Path blacklistPath = Paths.get(BLACKLIST_FILE_NAME);
-	DuxCLI.logger.debug("Checking for blacklist file");
-	if (!blacklistPath.toFile().exists()) {
-	    DuxCLI.logger.debug("Blacklist file does not exist");
-	    return;
-	}
-	
-	try (BufferedReader br = Files.newBufferedReader(blacklistPath)) {
-	    while (br.ready()) { 
-		String line = br.readLine();
-		paths.add(Paths.get(line).toAbsolutePath().normalize());
-	    }
-	}
+        Path blacklistPath = Paths.get(BLACKLIST_FILE_NAME);
+        DuxCLI.logger.debug("Checking for blacklist file");
+        if (!blacklistPath.toFile().exists()) {
+            DuxCLI.logger.debug("Blacklist file does not exist");
+            return;
+        }
+
+        try (BufferedReader br = Files.newBufferedReader(blacklistPath)) {
+            while (br.ready()) {
+                String line = br.readLine();
+                paths.add(Paths.get(line).toAbsolutePath().normalize());
+            }
+        }
     }
 
     public boolean contains(Path path) {
-	// check if any parent directory of p is in the blacklist either;
-	// normalize so that if any parent directory is in the blacklist,
-	// this loop will catch it
-	for (Path p = path.toAbsolutePath().normalize(); p != null; p = p.getParent()) {
-	    if (paths.contains(p)) {
-		return true;
-	    }
-	}
+        // check if any parent directory of p is in the blacklist either;
+        // normalize so that if any parent directory is in the blacklist,
+        // this loop will catch it
+        for (Path p = path.toAbsolutePath().normalize(); p != null; p = p.getParent()) {
+            if (paths.contains(p)) {
+                return true;
+            }
+        }
 
-	return false;
+        return false;
     }
 
     public boolean contains(String path) {
-	return contains(Paths.get(path));
+        return contains(Paths.get(path));
     }
 
     public boolean contains(File f) {
-	return contains(f.toPath());
+        return contains(f.toPath());
     }
 }
