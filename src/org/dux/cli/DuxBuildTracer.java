@@ -73,7 +73,7 @@ public class DuxBuildTracer {
                     envPaths.put(p, var.getKey());
                     DuxCLI.logger.debug("path: {} | variable: {}", p, var.getKey());
                     // As a temp measure, save all environment variables. TODO be more precise.
-                    varsToSave.add(new DuxConfigurationVar(var.getKey(), p.toString(), values.length > 1));
+                    // varsToSave.add(new DuxConfigurationVar(var.getKey(), p.toString(), values.length > 1));
                 } catch (InvalidPathException e) {
                     // an environment variable had an invalid path as its value. This is fine.
                 }
