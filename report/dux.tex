@@ -88,7 +88,7 @@ our proposed tool makes migrating an existing project a push-button task.
 
 \begin{figure}
 \includegraphics[width=\columnwidth]{DUX}
-\caption{Dux's very cute logo.}
+\caption{Dux's very cute logo. We did not create the image of the mother duck and ducklings; it is in the public domain.}
 \end{figure}
 
 \subsection{Migration}
@@ -141,7 +141,7 @@ which are the relevant
 ones for our purposes: \texttt{open} because any necessary configuration files that building tools use will
 have to be opened to be read (it is sufficient to see which ones are opened without logging any of the
 calls to \texttt{read}); \texttt{execve} because build managers generally delegate different build steps by
-executing the necessarhy programs (such as compilers or scripts); \texttt{readlink} to ensure that we
+executing the necessary programs (such as compilers or shell scripts); \texttt{readlink} to ensure that we
 properly reproduce the directory structure of dependencies by tracking symbolic links; and \texttt{stat} because
 it can be used to check the existence of a file without opening it, and we encountered this issue in practice.
 By logging these system
@@ -155,38 +155,38 @@ simple heuristic to decide which environmental variables to store in the absence
 all environmental variables (searching for paths) and matches those paths against those logged by strace,
 the intent being to find environmental variables specifying dependencies so that build tools can find them.
 In the future, we may take a more robust approach by using another tool such as \texttt{ltrace} to trace
-exactly which environmental variables are read during the build process (since environmental variables may
-encode information other than paths). Dux also includes a mode to simply create a full copy of the environment
+exactly which environmental variables are read during the build process, since environmental variables may
+encode information other than paths. Dux also includes a mode to simply create a full copy of the environment
 when building.
 
 Once Dux has saved the environmental variables deemed relevant and has a trace of system calls, it parses
 the system calls to determine which files should be stored in the configuration and should be uploaded to
 the store. Storing a file (or symbolic link) in the configuration means simply adding an entry to the
-configuration file (by default, \texttt{build.dux}), the entry consisting of a path to the dependency
+configuration file (named \texttt{build.dux} by default), the entry consisting of a path to the dependency
 and a hash of the contents
 (except in the case of symbolic links, which are handled separately).
  Note that we ``relativize'' file paths to avoid overspecifity; namely,
 if a file path shares a prefix with the directory in which Dux is being invoked, we convert that path to
 a relative path. This heuristic is to avoid having paths in the configuration be overly user-specific, as in the
-case where a username forms part of a path; we have found that it is generally more useful to other users to have such paths be
-relative to the project directory.
+case where a username forms part of a path; we have found that it is generally easier to reuse path information
+across users if the paths are relative to the project directory.
 
 Because we only record \texttt{open}, \texttt{execve}, \texttt{stat} and \texttt{readlink} calls, all the
-calls that arise in the recorded trace are potentially relevant, though we will only process a file once
-and apply certain heuristics (optional) to reduce the workload. One heuristic is to disregard files located 
-in the directory where Dux is being invoked, since these are ``project files'' and thus not dependencies
-of the project. Another heuristic is to keep a ``blacklist'' of files that are often read during a build
-but seldom convey relevant information or vary spuriously between machines or setups. By default, the
-``blacklist'' consists only of \texttt{/proc/meminfo} (which contains information about the hardware's
-capability), though the default blacklist may be expanded to include other low-level files once we have
-run more builds and seen more examples of spurious ``dependencies''; the user may also create
-a file \texttt{.duxignore} to supplement the default blacklist with further files or directories for
-Dux to ignore when parsing \texttt{strace} output.
+calls that arise in the recorded trace are potentially relevant. Traces for complex builds can be rather
+large, though we manage this by processing each file (especially hashing) only once and applying certain
+(optional) heuristics to reduce the workload. One heuristic is to disregard files located in the directory 
+where Dux is being invoked, since these are ``project files'' and thus not dependencies of the project. 
+Another heuristic is to keep a ``blacklist'' of files that are often read during a build but seldom convey 
+relevant information or vary spuriously between machines or setups. By default, the ``blacklist'' consists 
+only of \texttt{/proc/meminfo} (which contains information about the hardware's capability), though the 
+default blacklist may be expanded to include other low-level files once we have run more builds and seen more
+ examples of spurious ``dependencies''; the user may also create a file \texttt{.duxignore} to supplement 
+the default blacklist with further files or directories for Dux to ignore when parsing \texttt{strace} output.
 
 Once Dux has parsed the \texttt{strace} output and written the relevant files and symbolic links to
 the local configuration file, Dux also uploads the logged dependencies to Google Cloud Storage (in a
 bucket specified by the user) for future use. We implement our storage as a ``content-addressable
-file system'' by naming files after their hashes, relying instead on the configuration file to recover
+file system'' by naming files after their hashes, relying on the configuration file to recover
 the path information for each file; this way, a user can retrieve the contents of a file simply by 
 providing the hash logged in the configuration file---allowing an artifact common to multiple builds to
 only be uploaded once. We designed this "backend" to be modular, and implementing a different backing store
@@ -220,10 +220,10 @@ to inspect the configuration before actually executing the build (which is espec
 To evaluate our prototype of Dux, we used it to reproduce builds for two programs: a simple, UNIX-like shell and
 CIL (the C Intermediate Library)\footnote{\url{https://github.com/cil-project/cil}}, an abstraction of C programs
 that permits developers of static analyses to more easily reason about C programs. The simple shell was written in
-C and built using make. Its only dependency is on the system's \texttt{readline} library, which is already
+C and built using Make. Its only dependency is on the system's \texttt{readline} library, which is already
 present on most UNIX systems. Though this test is not very interesting on its own, it allowed us to test Dux in
 a variety of configurations and write simple integration tests\footnote{\url{https://travis-ci.org/kelloggm/dux}}
-that demonstrate that Dux "does the right thing" in very simple cases.
+that demonstrate that Dux behaves as expected in very simple cases.
 
 To test that Dux is capable of building larger-scale projects, we tested it on CIL. CIL is a reasonably-sized
 project: it contains about 120,000 lines of mostly OCaml and C code. It has a number of external dependencies,
@@ -258,12 +258,12 @@ and programs that are executed in one build on one system. As such, there are so
 Dux may fail to capture, such as logic that branches on different system configurations or present tools (e.g.,
 having different possible builds depending on whether GCC or Clang is present on the system). In the case of
 a build supporting different possible configurations, Dux may incorrectly label a machine as lacking proper
-configuration when, in fact, the build may very well succeed. It is not obvious how Dux can be modified to address
-this; a user would have to keep around different configuration files for different versions and know which
-Dux configuration to pass around as appropriately. That said, this is a possible avenue of future work. One possible
-scheme could include the production of a Dux configuration file for each supported operating system by the
-developers, and a check within Dux of which OS it is operating on. Dux could then choose the appropriate
-configuration file and proceed with the build.
+configuration when, in fact, the build may very well succeed on that machine using one of the alternatives. 
+It is not obvious how Dux can be modified to address this; a user would have to keep around different configuration 
+files for different possible builds and know which Dux configuration to pass around appropriately. That said, this 
+is a possible avenue of future work. One possible scheme could include the production of a Dux configuration 
+file for each supported operating system by the developers, and a check within Dux of which OS it is operating 
+on. Dux could then choose the appropriate configuration file and proceed with the build.
 
 Since Dux uploads dependencies without regard for their particular use, this may also lead to broken builds 
 if it is applied on a system different from the one that was used to produce the configuration for a build, 
