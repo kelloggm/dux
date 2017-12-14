@@ -184,6 +184,10 @@ only of \texttt{/proc/meminfo} (which contains information about the hardware's 
 default blacklist may be expanded to include other low-level files once we have run more builds and seen more
  examples of spurious ``dependencies''; the user may also create a file \texttt{.duxignore} to supplement 
 the default blacklist with further files or directories for Dux to ignore when parsing \texttt{strace} output.
+Another measure that greatly reduces Dux's workload is to disregard \texttt{open} and \texttt{execve} calls
+whose return values (also logged by \texttt{strace}) indicated a failure, since this usually means there is no 
+file to open or save (experimenting with running \texttt{strace} calls on small builds showed that common 
+Linux utilities often attempt to read many nonexistent configuration files that show up in the trace as errors).
 
 Once Dux has parsed the \texttt{strace} output and written the relevant files and symbolic links to
 the local configuration file, Dux also uploads the logged dependencies to Google Cloud Storage (in a
