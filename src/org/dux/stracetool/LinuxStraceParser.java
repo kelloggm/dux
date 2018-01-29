@@ -1,49 +1,20 @@
-package org.dux.cli;
+package org.dux.stracetool;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.dux.cli.DuxCLI;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An object responsible for reading in an strace dump line by line and
  * extracting the calls.
  */
-public class DuxStraceParser {
+public class LinuxStraceParser extends StraceParser {
     // regex corresponds to "call(args) = return"
     private static final String CALL_REGEX = ".*\\p{Alpha}(\\p{Alnum}|_)*\\s*\\(.*\\)\\s*\\=.*";
 
-    public static List<DuxStraceCall> parse(String path)
-            throws IOException, FileNotFoundException {
-
-        ArrayList<DuxStraceCall> calls = new ArrayList<>();
-
-        DuxCLI.logger.debug("creating a file reader and a buffered reader");
-
-        try (FileReader fr = new FileReader(path);
-             BufferedReader br = new BufferedReader(fr)) {
-            while (br.ready()) {
-                DuxCLI.logger.debug("buffer is ready");
-                String line = br.readLine();
-                DuxCLI.logger.debug("read this line: {}", line);
-                DuxStraceCall call = parseLine(line);
-                if (call == null) {
-                    continue;
-                }
-
-                calls.add(call);
-            }
-        }
-
-        return calls;
-    }
-
     // expects args to be in the form "arg1, arg2, {possible, struct, literal...}, ..., argn)"
-    private static String[] parseStraceArgs(String rawArgs) {
+    private String[] parseStraceArgs(String rawArgs) {
         int length = rawArgs.length();
 
         // handle the zero-args case right away (not sure it's possible in strace though)
@@ -75,7 +46,8 @@ public class DuxStraceParser {
         return args.toArray(new String[args.size()]);
     }
 
-    private static @Nullable DuxStraceCall parseLine(String line) {
+    @Override
+    protected @Nullable StraceCall parseLine(String line) {
         DuxCLI.logger.debug("parsing this line: {}", line);
 
         if (!line.matches(CALL_REGEX)) {
@@ -108,10 +80,10 @@ public class DuxStraceParser {
         // there may be an errno after the return value; split on whitespace to ignore
         String rawReturn = rhs.split("\\s")[0];
         if (rawReturn.equals("?")) {
-            return new DuxStraceCall(call, args);
+            return new StraceCall(call, args);
         }
 
         int returnValue = Integer.parseInt(rawReturn);
-        return new DuxStraceCall(call, args, returnValue);
+        return new StraceCall(call, args, returnValue);
     }
 }
