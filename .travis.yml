@@ -7,9 +7,9 @@ env:
 - V=0.8.0
 before_install:
 - openssl aes-256-cbc -K $encrypted_dabcf2a73fc5_key -iv $encrypted_dabcf2a73fc5_iv
-  -in credentials/dux-backend-8ce1b86dba94.json.enc -out credentials/dux-backend-8ce1b86dba94.json
+  -in credentials/GOOGLE_APPLICATION_CREDENTIALS.enc -out credentials/GOOGLE_APPLICATION_CREDENTIALS
   -d
-- export GOOGLE_APPLICATION_CREDENTIALS=credentials/dux-backend-8ce1b86dba94.json
+- export GOOGLE_APPLICATION_CREDENTIALS=credentials/GOOGLE_APPLICATION_CREDENTIALS
 - export URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-linux-x86_64.sh"
 - wget -O install.sh "${URL}"
 - chmod +x install.sh

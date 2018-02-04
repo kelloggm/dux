@@ -84,7 +84,7 @@ public class DuxOptions extends OptionsBase {
             name = "bucket",
             abbrev = 'b',
             help = "If using a google cloud backing store (-s google), the name of the bucket to upload/download to/from.",
-            defaultValue = "duxserver-test0"
+            defaultValue = "duxserver-test-om"
     )
     public String bucketName;
 
