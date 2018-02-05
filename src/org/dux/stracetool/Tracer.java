@@ -1,6 +1,7 @@
 package org.dux.stracetool;
 
-import org.dux.cli.DuxCLI;
+import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -12,33 +13,32 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Tracer {
+
+    // TODO Set logging level
+    public static Logger logger = (Logger) LoggerFactory.getLogger(Tracer.class);
+
     // TODO Allow for arbitrary temp file names (need to sanitize in constructor)
-    private static final String TMP_FILE = ".dux_out";
+    private static final String TMP_FILE = ".trace_out";
     private String[] args;
 
     private static final String[] STRACE_CALL = {
             "strace",
             "-o", TMP_FILE               // write to tmp file
     };
-
-    private static final String[] PROCMON_CALL = {
-            "TODO implement"
-    };
-
+    
     public Tracer(List<String> args) {
+        // TODO Sanitize args
         String os = System.getProperty("os.name");
-        List<String> argList = null;
+        List<String> argList;
         if (os.startsWith("Linux")) {
             argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
         } else if (os.startsWith("Windows")) {
-            // TODO implement
-            argList = new ArrayList<>(Arrays.asList(PROCMON_CALL));
+            // "args" is purely the command to trace (e.g. "make clean")
+            argList = new ArrayList<>();
         } else {
-            // TODO What to do here?
+            throw new UnsupportedOperationException("Unsupported OS");
         }
-        System.out.println("args = " + args);
         argList.addAll(args);
-        System.out.println("args = " + argList);
         this.args = argList.toArray(new String[0]);
     }
 
@@ -65,14 +65,34 @@ public class Tracer {
     }
 
     public void trace() throws IOException, InterruptedException {
-        DuxCLI.logger.debug("beginning a trace, getting runtime");
+        Tracer.logger.debug("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
-        DuxCLI.logger.debug("runtime acquired, executing program");
+        Tracer.logger.debug("runtime acquired, executing program");
         System.out.println(Arrays.toString(args));
-        Process proc = rt.exec(args);
-        Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
-        DuxCLI.logger.debug("waiting for build to terminate");
-        outputGobbler.start();
-        proc.waitFor();
+        String os = System.getProperty("os.name");
+        if (os.startsWith("Linux")) {
+            Process proc = rt.exec(args);
+            Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
+            Tracer.logger.debug("waiting for build to terminate");
+            outputGobbler.start();
+            proc.waitFor();
+        } else if (os.startsWith("Windows")) {
+            // turn on Process Monitor
+            Process proc1 = rt.exec("cmd /c start_trace.bat");
+            proc1.waitFor();
+
+            // run actual command to trace
+            Process proc = rt.exec(args);
+            Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
+            Tracer.logger.debug("waiting for build to terminate");
+            outputGobbler.start();
+            proc.waitFor();
+
+            // turn off Process Monitor
+            Process proc2 = rt.exec("cmd /c end_trace.bat");
+            proc2.waitFor();
+        } else {
+            throw new UnsupportedOperationException("Unsupported OS");
+        }
     }
 }

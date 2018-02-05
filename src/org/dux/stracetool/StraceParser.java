@@ -1,8 +1,6 @@
 package org.dux.stracetool;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
-// TODO What to do about DuxCLI references (primarily debug statements)?
-import org.dux.cli.DuxCLI;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -15,13 +13,13 @@ public abstract class StraceParser {
     public static List<StraceCall> parse(String path)
             throws IOException, FileNotFoundException {
         String os = System.getProperty("os.name");
-        StraceParser sp = null;
+        StraceParser sp;
         if (os.startsWith("Linux")) {
             sp = new LinuxStraceParser();
         } else if (os.startsWith("Windows")) {
-            // TODO implement
+            sp = new WindowsStraceParser();
         } else {
-            return null;
+            throw new UnsupportedOperationException("Unsupported OS");
         }
         return sp.parseFile(path);
     }
@@ -30,14 +28,14 @@ public abstract class StraceParser {
             throws IOException, FileNotFoundException {
         ArrayList<StraceCall> calls = new ArrayList<>();
 
-        DuxCLI.logger.debug("creating a file reader and a buffered reader");
+        Tracer.logger.debug("creating a file reader and a buffered reader");
 
         try (FileReader fr = new FileReader(path);
              BufferedReader br = new BufferedReader(fr)) {
             while (br.ready()) {
-                DuxCLI.logger.debug("buffer is ready");
+                Tracer.logger.debug("buffer is ready");
                 String line = br.readLine();
-                DuxCLI.logger.debug("read this line: {}", line);
+                Tracer.logger.debug("read this line: {}", line);
                 StraceCall call = parseLine(line);
                 if (call == null) {
                     continue;
