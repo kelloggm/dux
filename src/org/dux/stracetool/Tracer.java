@@ -1,5 +1,6 @@
 package org.dux.stracetool;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ public class Tracer {
     public static Logger logger;
     static {
         logger = (Logger) LoggerFactory.getLogger(Tracer.class);
-        logger.setLevel(Level.toLevel(options.level));
+        logger.setLevel(Level.INFO);
     }
 
     // TODO Allow for arbitrary temp file names (need to sanitize in constructor)
