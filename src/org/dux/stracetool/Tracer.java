@@ -31,14 +31,12 @@ public class Tracer {
         if (os.startsWith("Linux")) {
             argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
         } else if (os.startsWith("Windows")) {
-            // TODO implement
-            argList = new ArrayList<>(Arrays.asList(PROCMON_CALL));
+            throw new UnsupportedOperationException("Unsupported OS");
+            // argList = new ArrayList<>(Arrays.asList(PROCMON_CALL));
         } else {
-            // TODO What to do here?
+            throw new UnsupportedOperationException("Unsupported OS");
         }
-        System.out.println("args = " + args);
         argList.addAll(args);
-        System.out.println("args = " + argList);
         this.args = argList.toArray(new String[0]);
     }
 

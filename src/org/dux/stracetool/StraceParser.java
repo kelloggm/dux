@@ -19,9 +19,9 @@ public abstract class StraceParser {
         if (os.startsWith("Linux")) {
             sp = new LinuxStraceParser();
         } else if (os.startsWith("Windows")) {
-            // TODO implement
+            throw new UnsupportedOperationException("Unsupported OS");
         } else {
-            return null;
+            throw new UnsupportedOperationException("Unsupported OS");
         }
         return sp.parseFile(path);
     }
