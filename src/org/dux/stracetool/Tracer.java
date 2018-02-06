@@ -14,8 +14,11 @@ import java.util.List;
 
 public class Tracer {
 
-    // TODO Set logging level
-    public static Logger logger = (Logger) LoggerFactory.getLogger(Tracer.class);
+    public static Logger logger;
+    static {
+        logger = (Logger) LoggerFactory.getLogger(Tracer.class);
+        logger.setLevel(Level.toLevel(options.level));
+    }
 
     // TODO Allow for arbitrary temp file names (need to sanitize in constructor)
     private static final String TMP_FILE = ".trace_out";
