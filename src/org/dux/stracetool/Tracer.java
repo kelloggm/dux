@@ -75,7 +75,7 @@ public class Tracer {
         System.out.println(args);
         String os = System.getProperty("os.name");
         if (os.startsWith("Linux")) {
-            Process proc = rt.exec((String[]) args.toArray());
+            Process proc = rt.exec((String[]) args.toArray(new String[args.size()]));
             Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
             Tracer.logger.debug("waiting for build to terminate");
             outputGobbler.start();
