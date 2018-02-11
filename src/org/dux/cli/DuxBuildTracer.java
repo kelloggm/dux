@@ -25,7 +25,7 @@ import static org.dux.cli.DuxFileHasher.hashFile;
  * Currently depends on having strace available
  */
 public class DuxBuildTracer {
-    private static final String TMP_FILE = ".trace_out";
+    private static final String TMP_FILE = "trace.out";
     private Tracer t;
 
     private Map<Path, HashCode> fileHashes;
@@ -41,7 +41,15 @@ public class DuxBuildTracer {
                 "-f",                        // trace subprocesses as well
                 "-e", "trace=open,execve,readlink,fstat,stat,lstat",  // we care about calls to open or exec
         };
-        List<String> duxArgsList = new ArrayList<>(Arrays.asList(duxArgs));
+        List<String> duxArgsList;
+        String os = System.getProperty("os.name");
+        if (os.startsWith("Linux")) {
+            duxArgsList = new ArrayList<>(Arrays.asList(duxArgs));
+        } else if (os.startsWith("Windows")) {
+            duxArgsList = new ArrayList<>();
+        } else {
+            throw new UnsupportedOperationException("Unsupported OS");
+        }
         duxArgsList.addAll(args);
         t = new Tracer(duxArgsList);
 

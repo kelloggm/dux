@@ -22,8 +22,8 @@ public class Tracer {
     }
 
     // TODO Allow for arbitrary temp file names (need to sanitize in constructor)
-    private static final String TMP_FILE = ".trace_out";
-    private String[] args;
+    private static final String TMP_FILE = "trace.out";
+    private List<String> args;
 
     private static final String[] STRACE_CALL = {
             "strace",
@@ -43,7 +43,7 @@ public class Tracer {
             throw new UnsupportedOperationException("Unsupported OS");
         }
         argList.addAll(args);
-        this.args = argList.toArray(new String[0]);
+        this.args = argList;
     }
 
     // https://stackoverflow.com/questions/1732455/redirect-process-output-to-stdout
@@ -72,10 +72,10 @@ public class Tracer {
         Tracer.logger.debug("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
         Tracer.logger.debug("runtime acquired, executing program");
-        System.out.println(Arrays.toString(args));
+        System.out.println(args);
         String os = System.getProperty("os.name");
         if (os.startsWith("Linux")) {
-            Process proc = rt.exec(args);
+            Process proc = rt.exec((String[]) args.toArray());
             Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
             Tracer.logger.debug("waiting for build to terminate");
             outputGobbler.start();
@@ -86,7 +86,10 @@ public class Tracer {
             proc1.waitFor();
 
             // run actual command to trace
-            Process proc = rt.exec(args);
+            args.add(0, "cmd");
+            args.add(1, "/c");
+            String[] fullArgs = (String[]) args.toArray(new String[args.size()]);
+            Process proc = rt.exec(fullArgs);
             Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
             Tracer.logger.debug("waiting for build to terminate");
             outputGobbler.start();
