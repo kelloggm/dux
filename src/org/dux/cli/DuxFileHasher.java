@@ -4,6 +4,8 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,10 +18,12 @@ import java.io.IOException;
 public class DuxFileHasher {
     private static final int FILE_BUF_SIZE = 1024;
 
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(DuxFileHasher.class);
+
     public static HashCode hashFile(String path)
             throws IOException, FileNotFoundException {
 
-        DuxCLI.logger.debug("hashing this path: {}", path);
+        LOGGER.debug("hashing this path: {}", path);
 
         HashFunction hf = Hashing.sha256();
         Hasher hasher = hf.newHasher();
@@ -35,7 +39,7 @@ public class DuxFileHasher {
             }
         }
 
-        DuxCLI.logger.debug("hashing complete for path: {}", path);
+        LOGGER.debug("hashing complete for path: {}", path);
         return hasher.hash();
     }
 }

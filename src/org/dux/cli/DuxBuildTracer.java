@@ -1,10 +1,11 @@
 package org.dux.cli;
 
 import com.google.common.hash.HashCode;
-
 import org.dux.stracetool.StraceCall;
 import org.dux.stracetool.StraceParser;
 import org.dux.stracetool.Tracer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,7 +14,13 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.dux.cli.DuxFileHasher.hashFile;
 
@@ -26,6 +33,8 @@ import static org.dux.cli.DuxFileHasher.hashFile;
  */
 public class DuxBuildTracer {
     private static final String TMP_FILE = ".dux_out";
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(DuxBuildTracer.class);
+
     private Tracer t;
 
     private Map<Path, HashCode> fileHashes;
@@ -63,7 +72,7 @@ public class DuxBuildTracer {
                 try {
                     Path p = Paths.get(path).normalize();
                     envPaths.put(p, var.getKey());
-                    DuxCLI.logger.debug("path: {} | variable: {}", p, var.getKey());
+                    LOGGER.debug("path: {} | variable: {}", p, var.getKey());
                     // As a temp measure, save all environment variables. TODO be more precise.
                     // varsToSave.add(new DuxConfigurationVar(var.getKey(), p.toString(), values.length > 1));
                 } catch (InvalidPathException e) {
@@ -107,13 +116,13 @@ public class DuxBuildTracer {
     }
 
     public void trace(boolean includeProjDir, boolean includeDefaultBlacklist) throws IOException, InterruptedException {
-        DuxCLI.logger.debug("trace params: {}, {}", includeProjDir, includeDefaultBlacklist);
+        LOGGER.debug("trace params: {}, {}", includeProjDir, includeDefaultBlacklist);
         t.trace();
-        DuxCLI.logger.debug("Loading trace blacklist");
+        LOGGER.debug("Loading trace blacklist");
         DuxTraceBlacklist blacklist = new DuxTraceBlacklist(includeDefaultBlacklist);
-        DuxCLI.logger.debug("parsing strace file");
+        LOGGER.debug("parsing strace file");
         parseStraceFile(includeProjDir, blacklist);
-        DuxCLI.logger.debug("deleting strace file");
+        LOGGER.debug("deleting strace file");
         // get rid of strace TMP file once we're done
         File f = new File(TMP_FILE);
         f.delete();
@@ -141,13 +150,13 @@ public class DuxBuildTracer {
     private void parseStraceFile(boolean includeProjDir, DuxTraceBlacklist blacklist) throws IOException, FileNotFoundException {
         List<StraceCall> calls = StraceParser.parse(TMP_FILE);
 
-        DuxCLI.logger.debug("created strace call list");
+        LOGGER.debug("created strace call list");
 
         for (StraceCall c : calls) {
-            DuxCLI.logger.debug("recording a call: {}", c);
+            LOGGER.debug("recording a call: {}", c);
 
             // disregard everything but open, exec, and readlink calls, for now
-            DuxCLI.logger.debug("checking if the call is an open or exec");
+            LOGGER.debug("checking if the call is an open or exec");
             boolean fOpenOrExec = c.call.equals("open") || c.call.matches("exec.*");
             boolean fReadlink = c.call.equals("readlink");
             boolean fStat = c.call.matches(".*stat");
@@ -156,23 +165,23 @@ public class DuxBuildTracer {
             }
 
             // disregard if return value unknown or indicated failure
-            DuxCLI.logger.debug("checking if the call succeeded");
+            LOGGER.debug("checking if the call succeeded");
             if (!c.knownReturn || c.returnValue == -1) {
                 continue;
             }
 
             // need to get first argument, which is absolute path surrounded in quotes
-            DuxCLI.logger.debug("getting rawpath");
+            LOGGER.debug("getting rawpath");
             String rawPath = c.args[0];
-            DuxCLI.logger.debug("getting path from this rawpath: {}", rawPath);
+            LOGGER.debug("getting path from this rawpath: {}", rawPath);
             String path = rawPath.substring(1, rawPath.length() - 1);
-            DuxCLI.logger.debug("got path: {}", path);
+            LOGGER.debug("got path: {}", path);
 
             Path p = Paths.get(path).normalize();
 
             if (fOpenOrExec || fStat) {
                 if ((p = canHashPath(p, blacklist, includeProjDir)) != null) {
-                    DuxCLI.logger.debug("generating hash");
+                    LOGGER.debug("generating hash");
                     try {
                         HashCode hash = hashFile(path);
                         fileHashes.put(p, hash);
@@ -188,11 +197,11 @@ public class DuxBuildTracer {
 
                 // p is the symbolic link, and now we need to read the actual file.
 
-                DuxCLI.logger.debug("getting rawpath for link target");
+                LOGGER.debug("getting rawpath for link target");
                 String rawPathTarget = c.args[1];
-                DuxCLI.logger.debug("getting path from this rawpath: {} for link target", rawPathTarget);
+                LOGGER.debug("getting path from this rawpath: {} for link target", rawPathTarget);
                 String pathTarget = rawPathTarget.substring(1, rawPathTarget.length() - 1);
-                DuxCLI.logger.debug("got path: {} for link target", pathTarget);
+                LOGGER.debug("got path: {} for link target", pathTarget);
 
                 Path pTarget = Paths.get(pathTarget).normalize();
                 // if we can't or don't want to hash the target, then don't include this symbolic link.
@@ -203,7 +212,7 @@ public class DuxBuildTracer {
             }
         }
 
-        DuxCLI.logger.debug("completed recording of calls");
+        LOGGER.debug("completed recording of calls");
     }
 
     /**
@@ -213,14 +222,14 @@ public class DuxBuildTracer {
 
         // check for blacklisted files
         if (blacklist.contains(p)) {
-            DuxCLI.logger.debug("{} is blacklisted, ignoring", p.toString());
+            LOGGER.debug("{} is blacklisted, ignoring", p.toString());
             return null;
         }
 
         // we only want to hash regular files
-        DuxCLI.logger.debug("checking if file is a regular file");
+        LOGGER.debug("checking if file is a regular file");
         if (!Files.isRegularFile(p)) {
-            DuxCLI.logger.debug("{} is not a regular file", p.toString());
+            LOGGER.debug("{} is not a regular file", p.toString());
             return null;
         }
 
@@ -228,7 +237,7 @@ public class DuxBuildTracer {
 
         // disregard project files (heuristic: they're not dependencies)
         if (!includeProjDir && pathInSubdirectory(currentDir, p)) {
-            DuxCLI.logger.debug("{} is in the current project directory", p.toString());
+            LOGGER.debug("{} is in the current project directory", p.toString());
             return null;
         }
 
@@ -238,14 +247,14 @@ public class DuxBuildTracer {
         // Probably some cases where this is insufficient but it's a start
 
         // Min prefix length of 1 ==> they share a prefix that isn't root
-        DuxCLI.logger.debug("checking if file shares prefix with the current working directory");
+        LOGGER.debug("checking if file shares prefix with the current working directory");
         if (p.isAbsolute() && pathsSharePrefix(p, currentDir, 1)) {
-            DuxCLI.logger.debug("{} shares prefix with the current directory", p.toString());
+            LOGGER.debug("{} shares prefix with the current directory", p.toString());
             p = currentDir.relativize(p).normalize();
         }
 
         // don't hash if it's already present
-        DuxCLI.logger.debug("checking if file already hashed");
+        LOGGER.debug("checking if file already hashed");
         if (fileHashes.containsKey(p)) {
             return null;
         }
@@ -266,7 +275,7 @@ public class DuxBuildTracer {
     private void saveVarFromPath(Path p, Path toSave) {
         // does this path contain an environment variable that we want to save the value of?
 
-        DuxCLI.logger.debug("checking whether {} is a key into the envPaths map", p);
+        LOGGER.debug("checking whether {} is a key into the envPaths map", p);
 
         // nothing to do if nothing to save! this can happen when p is root and toSave is its parent
         if (toSave == null) {
@@ -275,7 +284,7 @@ public class DuxBuildTracer {
 
         if (envPaths.containsKey(p)) {
             String name = envPaths.get(p);
-            DuxCLI.logger.debug("it is - to env var {}", name);
+            LOGGER.debug("it is - to env var {}", name);
             DuxConfigurationVar var = new DuxConfigurationVar(name, toSave.toString(), envVarsWithPathSep.contains(name));
             varsToSave.add(var);
         }

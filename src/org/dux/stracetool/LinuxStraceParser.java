@@ -1,7 +1,8 @@
 package org.dux.stracetool;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
-import org.dux.cli.DuxCLI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
@@ -10,6 +11,9 @@ import java.util.ArrayList;
  * extracting the calls.
  */
 public class LinuxStraceParser extends StraceParser {
+
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(LinuxStraceParser.class);
+
     // regex corresponds to "call(args) = return"
     private static final String CALL_REGEX = ".*\\p{Alpha}(\\p{Alnum}|_)*\\s*\\(.*\\)\\s*\\=.*";
 
@@ -48,7 +52,7 @@ public class LinuxStraceParser extends StraceParser {
 
     @Override
     protected @Nullable StraceCall parseLine(String line) {
-        DuxCLI.logger.debug("parsing this line: {}", line);
+        LOGGER.debug("parsing this line: {}", line);
 
         if (!line.matches(CALL_REGEX)) {
             return null;

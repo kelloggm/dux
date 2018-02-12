@@ -19,15 +19,15 @@ import java.util.Collections;
  */
 public class DuxCLI {
 
-    public static Logger logger;
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(DuxCLI.class);
 
     public static void main(String[] args) {
         OptionsParser parser = OptionsParser.newOptionsParser(DuxOptions.class);
         parser.parseAndExitUponError(args);
         DuxOptions options = parser.getOptions(DuxOptions.class);
 
-        logger = (Logger) LoggerFactory.getLogger(DuxCLI.class);
-        logger.setLevel(Level.toLevel(options.level));
+        // configuring logback based on the debug level that was passed
+        LOGGER.setLevel(Level.toLevel(options.level));
 
         if (options.help) {
             printUsage(parser);
@@ -41,18 +41,18 @@ public class DuxCLI {
 
         if (options.command.equals("NOT SET")) {
             // This means no command was specified. Read and print the specified dux file.
-            logger.debug("reading configuration file: {}", options.file);
+            LOGGER.debug("reading configuration file: {}", options.file);
             DuxConfiguration config = DuxConfigurationIO.read(options.file);
 
             if (options.dumpConfig) {
-                logger.info("config: {}", config);
+                LOGGER.info("config: {}", config);
             } else {
-                logger.debug("config: {}", config);
+                LOGGER.debug("config: {}", config);
             }
 
             // if we've been set to check the config, we'll do that now
             if (options.checkConfig) {
-                logger.debug("checking configuration...");
+                LOGGER.debug("checking configuration...");
                 DuxConfigChecker checker = new DuxConfigChecker(backingStore);
                 try {
                     checker.checkConfig(config, options.launch);
@@ -60,14 +60,14 @@ public class DuxCLI {
                     ioe.printStackTrace();
                     return;
                 }
-                logger.debug("finished checking");
+                LOGGER.debug("finished checking");
             }
         } else {
             // A command was specified, so execute and trace it, and print the results to
             // the specified config file.
-            logger.debug("creating build tracer");
+            LOGGER.debug("creating build tracer");
             DuxBuildTracer tracer = new DuxBuildTracer(Collections.singletonList(options.command));
-            logger.debug("beginning trace of this program: {}", options.command);
+            LOGGER.debug("beginning trace of this program: {}", options.command);
             try {
                 tracer.trace(options.includeProjDir, options.includeDefaultBlacklist);
             } catch (IOException ioe) {
@@ -77,21 +77,21 @@ public class DuxCLI {
                 ie.printStackTrace();
                 return;
             }
-            logger.debug("tracing complete");
+            LOGGER.debug("tracing complete");
             String displayName = options.displayName.equals("NOT SET") ? null : options.displayName;
-            logger.debug("display name computed: {}", displayName);
+            LOGGER.debug("display name computed: {}", displayName);
             DuxConfiguration config = new DuxConfiguration(displayName, options.command);
-            logger.debug("new configuration created");
+            LOGGER.debug("new configuration created");
             tracer.dumpToConfiguration(config);
-            logger.debug("finished dumping trace to configuration");
+            LOGGER.debug("finished dumping trace to configuration");
             boolean result = config.sendToBackingStore(backingStore);
             if (result) {
-                logger.debug("finished sending to backing store");
+                LOGGER.debug("finished sending to backing store");
             } else {
-                logger.debug("at least one send failed. See the log.");
+                LOGGER.debug("at least one send failed. See the log.");
             }
             DuxConfigurationIO.write(options.file, config);
-            logger.debug("wrote configuration file: {}", options.file);
+            LOGGER.debug("wrote configuration file: {}", options.file);
         }
 
         if (options.fSaveConfig) {
@@ -100,8 +100,8 @@ public class DuxCLI {
     }
 
     private static void printUsage(OptionsParser parser) {
-        logger.info("Usage: dux OPTIONS");
-        logger.info(parser.describeOptions(Collections.<String, String>emptyMap(),
+        LOGGER.info("Usage: dux OPTIONS");
+        LOGGER.info(parser.describeOptions(Collections.<String, String>emptyMap(),
                 OptionsParser.HelpVerbosity.LONG));
     }
 }

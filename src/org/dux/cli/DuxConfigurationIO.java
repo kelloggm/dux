@@ -1,6 +1,8 @@
 package org.dux.cli;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -17,6 +19,8 @@ import java.io.ObjectOutputStream;
  * Dux configuration code (i.e. ends in {@code .dux}).
  */
 public class DuxConfigurationIO {
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(DuxConfigurationIO.class);
+
     public static @Nullable DuxConfiguration read(final String filePath) {
         final DuxConfiguration config;
         try {
@@ -43,7 +47,7 @@ public class DuxConfigurationIO {
             out.writeObject(config);
             out.close();
             fileOut.close();
-            DuxCLI.logger.debug("saved configuration to {}", filePath);
+            LOGGER.debug("saved configuration to {}", filePath);
         } catch (IOException i) {
             i.printStackTrace();
         }
