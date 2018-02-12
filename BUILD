@@ -7,5 +7,6 @@ java_binary(
             "@slf4j//:compile",
             "@logback_classic//:compile"],
     srcs = glob(["src/org/dux/cli/*.java", 
-                 "src/org/dux/backingstore/*.java"]),
+                 "src/org/dux/backingstore/*.java",
+		 "src/org/dux/stracetool/*.java"]),
 )

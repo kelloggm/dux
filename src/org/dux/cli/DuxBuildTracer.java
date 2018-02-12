@@ -2,24 +2,18 @@ package org.dux.cli;
 
 import com.google.common.hash.HashCode;
 
-import java.io.BufferedReader;
+import org.dux.stracetool.StraceCall;
+import org.dux.stracetool.StraceParser;
+import org.dux.stracetool.Tracer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.dux.cli.DuxFileHasher.hashFile;
 
@@ -32,14 +26,8 @@ import static org.dux.cli.DuxFileHasher.hashFile;
  */
 public class DuxBuildTracer {
     private static final String TMP_FILE = ".dux_out";
-    private static final String[] STRACE_CALL = {
-            "strace",
-            "-f",                        // trace subprocesses as well
-            "-e", "trace=open,execve,readlink,fstat,stat,lstat",  // we care about calls to open or exec
-            "-o", TMP_FILE               // write to tmp file
-    };
+    private Tracer t;
 
-    private String[] args;
     private Map<Path, HashCode> fileHashes;
 
     private Map<Path, Path> links;
@@ -49,9 +37,13 @@ public class DuxBuildTracer {
     private Set<DuxConfigurationVar> varsToSave;
 
     public DuxBuildTracer(List<String> args) {
-        ArrayList<String> argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
-        argList.addAll(args);
-        this.args = argList.toArray(new String[0]);
+        String[] duxArgs = {
+                "-f",                        // trace subprocesses as well
+                "-e", "trace=open,execve,readlink,fstat,stat,lstat",  // we care about calls to open or exec
+        };
+        List<String> duxArgsList = new ArrayList<>(Arrays.asList(duxArgs));
+        duxArgsList.addAll(args);
+        t = new Tracer(duxArgsList);
 
         fileHashes = new HashMap<>();
         links = new HashMap<>();
@@ -114,38 +106,9 @@ public class DuxBuildTracer {
         return sharedPrefixLength >= minPrefixLength;
     }
 
-    // https://stackoverflow.com/questions/1732455/redirect-process-output-to-stdout
-    class StreamGobbler extends Thread {
-        InputStream is;
-
-        // reads everything from is until empty.
-        StreamGobbler(InputStream is) {
-            this.is = is;
-        }
-
-        public void run() {
-            try {
-                InputStreamReader isr = new InputStreamReader(is);
-                BufferedReader br = new BufferedReader(isr);
-                String line=null;
-                while ( (line = br.readLine()) != null)
-                    System.out.println(line);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-        }
-    }
-
     public void trace(boolean includeProjDir, boolean includeDefaultBlacklist) throws IOException, InterruptedException {
-        DuxCLI.logger.debug("beginning a trace, getting runtime");
         DuxCLI.logger.debug("trace params: {}, {}", includeProjDir, includeDefaultBlacklist);
-        Runtime rt = Runtime.getRuntime();
-        DuxCLI.logger.debug("runtime acquired, executing program");
-        Process proc = rt.exec(args);
-        StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream());
-        DuxCLI.logger.debug("waiting for build to terminate");
-        outputGobbler.start();
-        proc.waitFor();
+        t.trace();
         DuxCLI.logger.debug("Loading trace blacklist");
         DuxTraceBlacklist blacklist = new DuxTraceBlacklist(includeDefaultBlacklist);
         DuxCLI.logger.debug("parsing strace file");
@@ -176,11 +139,11 @@ public class DuxBuildTracer {
     }
 
     private void parseStraceFile(boolean includeProjDir, DuxTraceBlacklist blacklist) throws IOException, FileNotFoundException {
-        List<DuxStraceCall> calls = DuxStraceParser.parse(TMP_FILE);
+        List<StraceCall> calls = StraceParser.parse(TMP_FILE);
 
         DuxCLI.logger.debug("created strace call list");
 
-        for (DuxStraceCall c : calls) {
+        for (StraceCall c : calls) {
             DuxCLI.logger.debug("recording a call: {}", c);
 
             // disregard everything but open, exec, and readlink calls, for now

@@ -1,24 +1,24 @@
-package org.dux.cli;
+package org.dux.stracetool;
 
 import java.util.Arrays;
 
 /**
  * Object that stores information parsed from strace calls
  */
-public class DuxStraceCall {
+public class StraceCall {
     public final String call;
     public final String[] args;
     public final boolean knownReturn;
     public final int returnValue;
 
-    public DuxStraceCall(String call, String[] args, int returnValue) {
+    public StraceCall(String call, String[] args, int returnValue) {
         this.call = call;
         this.args = Arrays.<String>copyOf(args, args.length);
         this.knownReturn = true;
         this.returnValue = returnValue;
     }
 
-    public DuxStraceCall(String call, String[] args) {
+    public StraceCall(String call, String[] args) {
         this.call = call;
         this.args = Arrays.<String>copyOf(args, args.length);
         this.knownReturn = false;
@@ -27,7 +27,7 @@ public class DuxStraceCall {
 
     @Override
     public String toString() {
-        return "DuxStraceCall{"
+        return "StraceCall{"
                 + "call=\"" + call + "\", "
                 + "args=\"" + Arrays.toString(args) + "\", "
                 + "knownReturn=" + knownReturn + ", "
