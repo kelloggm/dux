@@ -1,4 +1,4 @@
-#Strace Tool
+# Strace Tool
 
 The Strace Tool library can be used to abstract the functionality of a
 system-call tracing utility (such as strace on Linux) across platforms*.

@@ -37,21 +37,8 @@ public class DuxBuildTracer {
     private Set<DuxConfigurationVar> varsToSave;
 
     public DuxBuildTracer(List<String> args) {
-        String[] duxArgs = {
-                "-f",                        // trace subprocesses as well
-                "-e", "trace=open,execve,readlink,fstat,stat,lstat",  // we care about calls to open or exec
-        };
-        List<String> duxArgsList;
-        String os = System.getProperty("os.name");
-        if (os.startsWith("Linux")) {
-            duxArgsList = new ArrayList<>(Arrays.asList(duxArgs));
-        } else if (os.startsWith("Windows")) {
-            duxArgsList = new ArrayList<>();
-        } else {
-            throw new UnsupportedOperationException("Unsupported OS");
-        }
-        duxArgsList.addAll(args);
-        t = new Tracer(duxArgsList);
+        t = new Tracer.Builder(TMP_FILE, args).
+                traceSubprocesses().filterCalls().build();
 
         fileHashes = new HashMap<>();
         links = new HashMap<>();

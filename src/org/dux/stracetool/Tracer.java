@@ -13,37 +13,93 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Tracer {
+/**
+ * Create with the Tracer.Builder class.
+ */
 
+public class Tracer {
     public static Logger logger;
     static {
         logger = (Logger) LoggerFactory.getLogger(Tracer.class);
         logger.setLevel(Level.INFO);
     }
 
-    // TODO Allow for arbitrary temp file names (need to sanitize in constructor)
-    private static final String TMP_FILE = "trace.out";
+    private static final String[] FILTER_ARGS = {
+            "-e", "trace=open,execve,readlink,fstat,stat,lstat"
+    };
+
     private List<String> args;
 
-    private static final String[] STRACE_CALL = {
-            "strace",
-            "-o", TMP_FILE               // write to tmp file
-    };
-    
-    public Tracer(List<String> args) {
-        // TODO Sanitize args
+    public static class Builder {
+        // Required parameters
+        private final String fileName;
+        private final List<String> traceCommand;
+
+        // Optional parameters
+        private boolean traceSubprocesses = false;
+        private boolean filterCalls = false;
+
+        public Builder(String fileName, List<String> traceCommand) {
+            // argument checking
+            if (fileName == null || traceCommand == null) {
+                throw new NullPointerException("Arguments cannot be null");
+            }
+            if (fileName.length() == 0) {
+                throw new IllegalArgumentException("File name cannot be empty");
+            }
+            if (traceCommand.size() == 0) {
+                throw new IllegalArgumentException("Trace command cannot be empty");
+            }
+            if (fileName.contains(" ")) {
+                // spaces could mean they are passing arbitrary arguments to
+                // strace or procmon; disallow for now
+                throw new IllegalArgumentException("No spaces allowed in filename");
+            }
+
+            this.fileName = fileName;
+            // TODO How to sanitize this?
+            this.traceCommand = traceCommand;
+        }
+
+        public Builder traceSubprocesses() {
+            traceSubprocesses = true;
+            return this;
+        }
+
+        // For now, can only filter with the strace flag
+        // "-e trace=open,execve,readlink,fstat,stat,lstat"
+        public Builder filterCalls() {
+            filterCalls = true;
+            return this;
+        }
+
+        public Tracer build() {
+            return new Tracer(this);
+        }
+    }
+
+    private Tracer(Builder builder) {
         String os = System.getProperty("os.name");
-        List<String> argList;
+        args = new ArrayList<>();
         if (os.startsWith("Linux")) {
-            argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
+            args.add("strace");
+            args.add("-o");
+            args.add(builder.fileName);
+            if (builder.filterCalls) {
+                args.add("-f");
+            }
+            if (builder.traceSubprocesses) {
+                args.addAll(Arrays.asList(FILTER_ARGS));
+            }
         } else if (os.startsWith("Windows")) {
-            // "args" is purely the command to trace (e.g. "make clean")
-            argList = new ArrayList<>();
+            args.add(0, "cmd");
+            args.add(1, "/c");
+            // TODO Actually use traceSubprocesses/filterCalls on Windows somehow
         } else {
             throw new UnsupportedOperationException("Unsupported OS");
         }
-        argList.addAll(args);
-        this.args = argList;
+        args.addAll(builder.traceCommand);
+
     }
 
     // https://stackoverflow.com/questions/1732455/redirect-process-output-to-stdout
@@ -72,7 +128,6 @@ public class Tracer {
         Tracer.logger.debug("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
         Tracer.logger.debug("runtime acquired, executing program");
-        System.out.println(args);
         String os = System.getProperty("os.name");
         if (os.startsWith("Linux")) {
             Process proc = rt.exec((String[]) args.toArray(new String[args.size()]));
@@ -86,10 +141,7 @@ public class Tracer {
             proc1.waitFor();
 
             // run actual command to trace
-            args.add(0, "cmd");
-            args.add(1, "/c");
-            String[] fullArgs = (String[]) args.toArray(new String[args.size()]);
-            Process proc = rt.exec(fullArgs);
+            Process proc = rt.exec((String[]) args.toArray(new String[args.size()]));
             Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
             Tracer.logger.debug("waiting for build to terminate");
             outputGobbler.start();
