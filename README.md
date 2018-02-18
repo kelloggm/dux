@@ -19,3 +19,4 @@ for IntelliJ), so we have just been using Bazel from the command line.
 ## Testing
 Dux also uses Travis-CI for testing. Again, see /credentials/README.md for info
 on how to configure your credentials with Travis.
+
