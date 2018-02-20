@@ -168,12 +168,12 @@ public class Tracer {
 
             // EXTREMELY BAD; replace with Java 9 Process.getPid() once Java 9 becomes more mainstream
             String name = ManagementFactory.getRuntimeMXBean().getName();
-            int jvm_pid = Integer.parseInt(name.split("@")[0]);
+            int jvmPid = Integer.parseInt(name.split("@")[0]);
 
             // need to manually filter after the trace if on Windows -- SLOW
             try {
                 Set<Integer> parent_pids = new HashSet<>();
-                parent_pids.add(jvm_pid);
+                parent_pids.add(jvmPid);
 
                 if (traceSubprocesses) {
                     // parse out pairs of pids and parent pids
@@ -218,15 +218,25 @@ public class Tracer {
                         continue;
                     }
                     if (parent_pids.contains(Integer.parseInt(parts[6]))) {
-                        // TODO Handle filterCalls
+                        if (filterCalls) {
+                            // NOTE: files, symbolic links, and hard links seem
+                            // to all be created or read through this procedure:
+                            // QueryDirectory, CreateFile, QueryBasicInformationFile,
+                            // CloseFile, CreateFile, QueryStandardInformationFile,
+                            // ReadFile, CloseFile
+
+                            // So tracing any of these calls would be sufficient
+                            String call = parts[3];
+                            if (!(call.equals("CreateFile") || call.equals("Process Create"))) {
+                                continue;
+                            }
+                        }
                         out.println(line);
                     }
                 }
                 fr.close();
                 File f = new File("strace.csv");
-                if (!f.delete()) {
-                    throw new RuntimeException();
-                }
+                f.delete();
             } catch (IOException ioe) {
                 // won't happen; we just created the file we are opening
                 System.out.println("You were wrong...");
@@ -244,7 +254,7 @@ public class Tracer {
         // Process Monitor outputs csv
         String[] parts = line.split("\",\"");
         // e.g. "1:41:00.4573350 PM","Explorer.EXE","7572","RegQueryKey",
-        // "HKCU\Software\Classes","SUCCESS","Query: Name", "2422"
+        // "HKCU\Software\Classes","SUCCESS","2422"
 
         char timestampFirstChar = parts[0].charAt(0);
         if (timestampFirstChar >= '9' || timestampFirstChar <= '0') {
