@@ -1,0 +1,27 @@
+So, you want to add a Maven dependency to Dux? Dux uses rules_maven (https://github.com/pubref/rules_maven) for adding Maven dependencies. Unfortunately, its documentation is garbage.
+
+Here are concrete steps to add a Maven dependency to dux.
+
+1. Create a new rule in the WORKSPACE file that looks like this:
+
+maven_repository(
+  name = "jna_platform",
+  deps = [
+    'net.java.dev.jna:jna-platform:4.5.1',
+  ],
+)
+
+load("@jna_platform//:rules.bzl", "jna_platform_compile")
+jna_platform_compile()
+
+There are a few holes to fill in here. Replace "net.java.dev.jna" with the Maven repo you're using. Replace "jna_platform" with the artifact name, and "4.5.1" with the artifact version you want.
+
+2. Add to the list of dependencies in the BUILD file:
+
+"@jna_platform//:compile",
+
+again, replace "jna_platform" with your artifact name.
+
+3. Run "bazel build //:dux". This should generate a new version of the maven_repository rule in "hermetic" form. Copy that into the WORKSPACE file, replacing the other maven_repository rule you wrote in step 1.
+
+4. You're done. Confirm this worked by running "bazel build //:dux" again.
