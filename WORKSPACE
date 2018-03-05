@@ -115,3 +115,30 @@ maven_repository(
 
 load("@logback_classic//:rules.bzl", "logback_classic_compile")
 logback_classic_compile()
+
+maven_repository(
+    name = 'jna',
+    deps = [
+        'net.java.dev.jna:jna:4.5.1',
+    ],
+    transitive_deps = [
+        '65bd0cacc9c79a21c6ed8e9f588577cd3c2f85b9:net.java.dev.jna:jna:4.5.1',
+    ],
+)
+
+load("@jna//:rules.bzl", "jna_compile")
+jna_compile()
+
+maven_repository(
+    name = 'jna_platform',
+    deps = [
+        'net.java.dev.jna:jna-platform:4.5.1',
+    ],
+    transitive_deps = [
+        '65bd0cacc9c79a21c6ed8e9f588577cd3c2f85b9:net.java.dev.jna:jna:4.5.1',
+        '117d52c9f672d8b7ea80a81464c33ef843de9254:net.java.dev.jna:jna-platform:4.5.1',
+    ],
+)
+
+load("@jna_platform//:rules.bzl", "jna_platform_compile")
+jna_platform_compile()
