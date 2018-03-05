@@ -2,6 +2,11 @@ package org.dux.stracetool;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.WinNT;
+import com.sun.jna.platform.win32.Kernel32;
+
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
@@ -12,7 +17,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintStream;
 
-import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -105,8 +110,6 @@ public class Tracer {
                 args.addAll(Arrays.asList(FILTER_ARGS));
             }
         } else if (os.startsWith("Windows")) {
-            args.add("cmd");
-            args.add("/c");
             fileName = builder.fileName;
             traceSubprocesses = builder.traceSubprocesses;
             filterCalls = builder.filterCalls;
@@ -160,54 +163,20 @@ public class Tracer {
             Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
             Tracer.logger.debug("waiting for build to terminate");
             outputGobbler.start();
+            // TODO Replace with Java 9/10 Process.pid() once those become more mainstream
+            int myPid = getPid(proc);
             proc.waitFor();
 
             // turn off Process Monitor
             Process proc2 = rt.exec("cmd /c src\\org\\dux\\stracetool\\end_trace.bat");
             proc2.waitFor();
 
-            // EXTREMELY BAD; replace with Java 9 Process.getPid() once Java 9 becomes more mainstream
-            String name = ManagementFactory.getRuntimeMXBean().getName();
-            int jvmPid = Integer.parseInt(name.split("@")[0]);
-
             // need to manually filter after the trace if on Windows -- SLOW
             try {
-                Set<Integer> parent_pids = new HashSet<>();
-                parent_pids.add(jvmPid);
-
+                Set<Integer> parentPids = new HashSet<>();
                 if (traceSubprocesses) {
-                    // parse out pairs of pids and parent pids
-                    List<int[]> pairs = new ArrayList<int[]>();
-                    FileReader fr = new FileReader("strace.csv");
-                    BufferedReader br = new BufferedReader(fr);
-                    while (br.ready()) {
-                        String[] parts = skipBadLine(br.readLine());
-                        if (parts == null) {
-                            // got a bad line
-                            continue;
-                        }
-                        int pid = Integer.parseInt(parts[2]);
-                        int parent_pid = Integer.parseInt(parts[parts.length - 1]);
-                        int[] pair = {pid, parent_pid};
-                        pairs.add(pair);
-                    }
-                    fr.close();
-
-                    // find pids we need to track with fixed-point algorithm
-                    int start_size = 0;
-                    int end_size = 1;
-                    while (start_size != end_size) {
-                        start_size = parent_pids.size();
-                        for (int[] pair : pairs) {
-                            if (parent_pids.contains(pair[1])) {
-                                parent_pids.add(pair[0]);
-                            }
-                        }
-                        end_size = parent_pids.size();
-                    }
+                    parentPids = findParentPids(myPid, "strace.csv");
                 }
-
-
                 FileReader fr = new FileReader("strace.csv");
                 BufferedReader br = new BufferedReader(fr);
                 PrintStream out = new PrintStream(new File(fileName));
@@ -217,7 +186,8 @@ public class Tracer {
                     if (parts == null) {
                         continue;
                     }
-                    if (parent_pids.contains(Integer.parseInt(parts[6]))) {
+                    if (parentPids.contains(Integer.parseInt(parts[6])) ||
+                        Integer.parseInt(parts[2]) == myPid) {
                         if (filterCalls) {
                             // NOTE: files, symbolic links, and hard links seem
                             // to all be created or read through this procedure:
@@ -239,7 +209,7 @@ public class Tracer {
                 f.delete();
             } catch (IOException ioe) {
                 // won't happen; we just created the file we are opening
-                System.out.println("You were wrong...");
+                Tracer.logger.debug("You were wrong...");
                 ioe.printStackTrace();
             }
         } else {
@@ -272,5 +242,67 @@ public class Tracer {
         // TODO filter out conhost.exe/cmd.exe?
 
         return parts;
+    }
+
+    // Returns a set of pids that could be valid parent process pids for the
+    // process event data generated in ProcMon CSV log filename.
+    private Set<Integer> findParentPids(int startingPid, String filename)
+            throws IOException {
+        // parse out pairs of pids and parent pids from filename
+        Set<Integer> parentPids = new HashSet<>();
+        parentPids.add(startingPid);
+        List<int[]> pairs = new ArrayList<int[]>();
+        FileReader fr = new FileReader(filename);
+        BufferedReader br = new BufferedReader(fr);
+        while (br.ready()) {
+            String[] parts = skipBadLine(br.readLine());
+            if (parts == null) {
+                // got a bad line
+                continue;
+            }
+            int pid = Integer.parseInt(parts[2]);
+            int parent_pid = Integer.parseInt(parts[parts.length - 1]);
+            int[] pair = {pid, parent_pid};
+            pairs.add(pair);
+        }
+        fr.close();
+
+        // find pids we need to track with fixed-point algorithm
+        int start_size = 0;
+        int end_size = 1;
+        while (start_size != end_size) {
+            start_size = parentPids.size();
+            for (int[] pair : pairs) {
+                if (parentPids.contains(pair[1])) {
+                    parentPids.add(pair[0]);
+                }
+            }
+            end_size = parentPids.size();
+        }
+        return parentPids;
+    }
+
+    // Returns the pid of process proc (Windows-dependent)
+    private int getPid(Process proc) {
+        // EXTREMELY BAD; use JNA/Reflection Windows-dependent hack to get pid
+        // https://stackoverflow.com/questions/4750470/how-to-get-pid-of
+        // -process-ive-just-started-within-java-program
+        int pid;
+        try {
+            Field f = proc.getClass().getDeclaredField("handle");
+            f.setAccessible(true);
+            long handl = f.getLong(proc);
+            Kernel32 kernel = Kernel32.INSTANCE;
+            WinNT.HANDLE hand = new WinNT.HANDLE();
+            hand.setPointer(Pointer.createConstant(handl));
+            pid = kernel.GetProcessId(hand);
+            f.setAccessible(false);
+            return pid;
+        } catch (IllegalAccessException iae) {
+            Tracer.logger.debug("Windows pid access hack didn't work...");
+        } catch (NoSuchFieldException nsfe) {
+            Tracer.logger.debug("Windows pid access hack didn't work...");
+        }
+        return -1;
     }
 }
