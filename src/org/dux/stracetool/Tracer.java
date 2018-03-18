@@ -238,9 +238,6 @@ public class Tracer {
             // ignore calls made by Process Monitor itself
             return null;
         }
-
-        // TODO filter out conhost.exe/cmd.exe?
-
         return parts;
     }
 
