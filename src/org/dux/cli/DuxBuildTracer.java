@@ -164,12 +164,19 @@ public class DuxBuildTracer {
             DuxCLI.logger.debug("got path: {}", path);
 
             // if this file is in the C:\Windows directory, don't need to store
-            String[] parts = path.split(":"); // ["C", "\Windows\..."]
-            if (parts[1].length() > 8) {
-                String pathNoVolume = parts[1];
-                if (pathNoVolume.substring(1, 8).equalsIgnoreCase("Windows")) {
-                    DuxCLI.logger.debug("skipping file in Windows directory: {}", path);
+            String os = System.getProperty("os.name");
+            if (os.startsWith("Windows")) {
+                String[] parts = path.split(":"); // ["C", "\Windows\..."]
+                if (parts.length == 1) {
+                    // the file is "C:" -> ["C"]; nothing to do
                     continue;
+                }
+                if (parts[1].length() > 8) {
+                    String pathNoVolume = parts[1];
+                    if (pathNoVolume.substring(1, 8).equalsIgnoreCase("Windows")) {
+                        DuxCLI.logger.debug("skipping file in Windows directory: {}", path);
+                        continue;
+                    }
                 }
             }
 
