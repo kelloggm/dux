@@ -25,7 +25,7 @@ import static org.dux.cli.DuxFileHasher.hashFile;
  * Currently depends on having strace available
  */
 public class DuxBuildTracer {
-    private static final String TMP_FILE = ".dux_out";
+    private static final String TMP_FILE = "trace.out";
     private Tracer t;
 
     private Map<Path, HashCode> fileHashes;
@@ -37,13 +37,8 @@ public class DuxBuildTracer {
     private Set<DuxConfigurationVar> varsToSave;
 
     public DuxBuildTracer(List<String> args) {
-        String[] duxArgs = {
-                "-f",                        // trace subprocesses as well
-                "-e", "trace=open,execve,readlink,fstat,stat,lstat",  // we care about calls to open or exec
-        };
-        List<String> duxArgsList = new ArrayList<>(Arrays.asList(duxArgs));
-        duxArgsList.addAll(args);
-        t = new Tracer(duxArgsList);
+        t = new Tracer.Builder(TMP_FILE, args).
+                traceSubprocesses().filterCalls().build();
 
         fileHashes = new HashMap<>();
         links = new HashMap<>();
@@ -148,9 +143,9 @@ public class DuxBuildTracer {
 
             // disregard everything but open, exec, and readlink calls, for now
             DuxCLI.logger.debug("checking if the call is an open or exec");
-            boolean fOpenOrExec = c.call.equals("open") || c.call.matches("exec.*");
-            boolean fReadlink = c.call.equals("readlink");
-            boolean fStat = c.call.matches(".*stat");
+            boolean fOpenOrExec = c.isOpen() || c.isExec();
+            boolean fReadlink = c.isReadLink();
+            boolean fStat = c.isStat();
             if (!fOpenOrExec && !fReadlink) {
                 continue;
             }
@@ -168,6 +163,23 @@ public class DuxBuildTracer {
             String path = rawPath.substring(1, rawPath.length() - 1);
             DuxCLI.logger.debug("got path: {}", path);
 
+            // if this file is in the C:\Windows directory, don't need to store
+            String os = System.getProperty("os.name");
+            if (os.startsWith("Windows")) {
+                String[] parts = path.split(":"); // ["C", "\Windows\..."]
+                if (parts.length == 1) {
+                    // the file is "C:" -> ["C"]; nothing to do
+                    continue;
+                }
+                if (parts[1].length() > 8) {
+                    String pathNoVolume = parts[1];
+                    if (pathNoVolume.substring(1, 8).equalsIgnoreCase("Windows")) {
+                        DuxCLI.logger.debug("skipping file in Windows directory: {}", path);
+                        continue;
+                    }
+                }
+            }
+
             Path p = Paths.get(path).normalize();
 
             if (fOpenOrExec || fStat) {
@@ -178,6 +190,7 @@ public class DuxBuildTracer {
                         fileHashes.put(p, hash);
                     } catch (FileNotFoundException e) {
                         // must be a file created and deleted during the build
+                        DuxCLI.logger.debug("skipping temp file: {}", path);
                         continue;
                     }
                 }
