@@ -200,6 +200,7 @@ public class Tracer {
                             if (!(call.equals("CreateFile") || call.equals("Process Create"))) {
                                 continue;
                             }
+                            // TODO: what to do about readlink?
                         }
                         out.println(line);
                     }
