@@ -1,17 +1,20 @@
 package org.dux.stracetool;
 
-import org.dux.cli.DuxCLI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class Tracer {
+
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(Tracer.class);
+
     // TODO Allow for arbitrary temp file names (need to sanitize in constructor)
     private static final String TMP_FILE = ".dux_out";
     private String[] args;
@@ -63,13 +66,13 @@ public class Tracer {
     }
 
     public void trace() throws IOException, InterruptedException {
-        DuxCLI.logger.debug("beginning a trace, getting runtime");
+        LOGGER.debug("beginning a trace, getting runtime");
         Runtime rt = Runtime.getRuntime();
-        DuxCLI.logger.debug("runtime acquired, executing program");
+        LOGGER.debug("runtime acquired, executing program");
         System.out.println(Arrays.toString(args));
         Process proc = rt.exec(args);
         Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
-        DuxCLI.logger.debug("waiting for build to terminate");
+        LOGGER.debug("waiting for build to terminate");
         outputGobbler.start();
         proc.waitFor();
     }

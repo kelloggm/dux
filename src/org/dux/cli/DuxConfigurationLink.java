@@ -1,5 +1,8 @@
 package org.dux.cli;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -9,6 +12,9 @@ import java.nio.file.Path;
  * Data class representing a symbolic link.
  */
 public class DuxConfigurationLink implements Serializable {
+
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(DuxConfigurationLink.class);
+
 
     public Path getLink() {
         return link;
@@ -32,10 +38,10 @@ public class DuxConfigurationLink implements Serializable {
         try {
             Files.createSymbolicLink(link, target);
         } catch (IOException x) {
-            DuxCLI.logger.error("cannot create link: {}", x);
+            LOGGER.error("cannot create link: {}", x);
         } catch (UnsupportedOperationException x) {
             // Some file systems do not support symbolic links.
-            DuxCLI.logger.error("this filesystem does not support symbolic links: {}", x);
+            LOGGER.error("this filesystem does not support symbolic links: {}", x);
         }
     }
 

@@ -1,11 +1,15 @@
 package org.dux.backingstore;
 
-import org.dux.cli.DuxCLI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A builder for DuxBackingStore_s
  */
 public class DuxBackingStoreBuilder {
+
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(DuxBackingStore.class);
+
     private String type = null;
     private String bucket = null;
 
@@ -29,7 +33,7 @@ public class DuxBackingStoreBuilder {
         switch (type) {
             case GOOGLE_CLOUD_STORAGE:
                 if (bucket == null) {
-                    DuxCLI.logger.error("tried to build a google backing store without specifying a bucket!");
+                    LOGGER.error("tried to build a google backing store without specifying a bucket!");
                     return null;
                 }
                 return new GoogleBackingStore(bucket);

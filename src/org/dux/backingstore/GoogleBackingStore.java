@@ -2,11 +2,11 @@ package org.dux.backingstore;
 
 import com.google.cloud.ReadChannel;
 import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import org.dux.cli.DuxCLI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,6 +22,9 @@ import java.nio.channels.WritableByteChannel;
  *  An implementation of {@link DuxBackingStore} that uses Google Cloud Storage as the backing store.
  */
 public class GoogleBackingStore implements DuxBackingStore {
+
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(GoogleBackingStore.class);
+
 
     /**
      * The default storage instance available, based on the credentials available to the running application.
@@ -54,21 +57,21 @@ public class GoogleBackingStore implements DuxBackingStore {
      */
     @Override
     public boolean fetchFile(String key, String target) {
-        DuxCLI.logger.debug("Fetching hash {} from Google Cloud Storage", key);
+        LOGGER.debug("Fetching hash {} from Google Cloud Storage", key);
         Blob blob = storage.get(BUCKET_NAME, key);
         if (blob == null) {
-            DuxCLI.logger.debug("GCS reports it could not find the file");
+            LOGGER.debug("GCS reports it could not find the file");
             return false;
         }
         PrintStream writeTo;
         File targetFile = new File(target);
         if (targetFile.getParentFile() == null || !targetFile.getParentFile().mkdirs()) {
-            DuxCLI.logger.debug("could not create directories needed to write to {}.", target);
+            LOGGER.debug("could not create directories needed to write to {}.", target);
         }
         try {
             writeTo = new PrintStream(new FileOutputStream(targetFile));
         } catch (IOException ioe) {
-            DuxCLI.logger.error("target file {} could not be opened for writing. Do you need to run as root?", target);
+            LOGGER.error("target file {} could not be opened for writing. Do you need to run as root?", target);
             return false;
         }
         if (blob.getSize() < 1_000_000) {
@@ -77,7 +80,7 @@ public class GoogleBackingStore implements DuxBackingStore {
             try {
                 writeTo.write(content);
             } catch (IOException ioe) {
-                DuxCLI.logger.error("failed to write to target file {}", target);
+                LOGGER.error("failed to write to target file {}", target);
                 return false;
             }
         } else {
@@ -92,7 +95,7 @@ public class GoogleBackingStore implements DuxBackingStore {
                         bytes.clear();
                     }
                 } catch (IOException ioe) {
-                    DuxCLI.logger.debug("failed to write (large) to target file {}", target);
+                    LOGGER.debug("failed to write (large) to target file {}", target);
                     return false;
                 }
             }
@@ -114,15 +117,15 @@ public class GoogleBackingStore implements DuxBackingStore {
      */
     @Override
     public boolean storeFile(String key, String filePath) {
-        DuxCLI.logger.debug("Storing file {} in Google Cloud Storage", filePath);
+        LOGGER.debug("Storing file {} in Google Cloud Storage", filePath);
         try {
             InputStream fileInputStream = new FileInputStream(filePath);
             Bucket bucket = storage.get(BUCKET_NAME);
             bucket.create(key, fileInputStream);
-            DuxCLI.logger.debug("file stored successfully");
+            LOGGER.debug("file stored successfully");
             return true;
         } catch (IOException ioe) {
-            DuxCLI.logger.debug("IOException occured while trying to read file");
+            LOGGER.debug("IOException occured while trying to read file");
             return false;
         }
     }

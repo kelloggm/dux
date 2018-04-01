@@ -1,5 +1,8 @@
 package org.dux.cli;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +20,9 @@ import java.util.Set;
  * children of the directory.
  */
 public class DuxTraceBlacklist {
+
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(DuxTraceBlacklist.class);
+
     private static final String BLACKLIST_FILE_NAME = ".duxignore";
     private static final String[] DEFAULT_LIST = {
             "/proc/meminfo" // system specs
@@ -34,9 +40,9 @@ public class DuxTraceBlacklist {
         }
 
         Path blacklistPath = Paths.get(BLACKLIST_FILE_NAME);
-        DuxCLI.logger.debug("Checking for blacklist file");
+        LOGGER.debug("Checking for blacklist file");
         if (!blacklistPath.toFile().exists()) {
-            DuxCLI.logger.debug("Blacklist file does not exist");
+            LOGGER.debug("Blacklist file does not exist");
             return;
         }
 

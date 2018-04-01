@@ -1,8 +1,8 @@
 package org.dux.stracetool;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
-// TODO What to do about DuxCLI references (primarily debug statements)?
-import org.dux.cli.DuxCLI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class StraceParser {
+
+    private static Logger LOGGER = (Logger) LoggerFactory.getLogger(StraceParser.class);
+
     public static List<StraceCall> parse(String path)
             throws IOException, FileNotFoundException {
         String os = System.getProperty("os.name");
@@ -30,14 +33,14 @@ public abstract class StraceParser {
             throws IOException, FileNotFoundException {
         ArrayList<StraceCall> calls = new ArrayList<>();
 
-        DuxCLI.logger.debug("creating a file reader and a buffered reader");
+        LOGGER.debug("creating a file reader and a buffered reader");
 
         try (FileReader fr = new FileReader(path);
              BufferedReader br = new BufferedReader(fr)) {
             while (br.ready()) {
-                DuxCLI.logger.debug("buffer is ready");
+                LOGGER.debug("buffer is ready");
                 String line = br.readLine();
-                DuxCLI.logger.debug("read this line: {}", line);
+                LOGGER.debug("read this line: {}", line);
                 StraceCall call = parseLine(line);
                 if (call == null) {
                     continue;
