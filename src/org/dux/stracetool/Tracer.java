@@ -75,7 +75,8 @@ public class Tracer {
             }
 
             this.fileName = fileName;
-            // TODO How to sanitize this?
+            // don't need to sanitize trace command because users could just
+            // run this command themselves without passing it through dux
             this.traceCommand = traceCommand;
         }
 
@@ -117,7 +118,6 @@ public class Tracer {
             throw new UnsupportedOperationException("Unsupported OS");
         }
         args.addAll(builder.traceCommand);
-
     }
 
     // https://stackoverflow.com/questions/1732455/redirect-process-output-to-stdout
@@ -210,7 +210,8 @@ public class Tracer {
                 f.delete();
             } catch (IOException ioe) {
                 // won't happen; we just created the file we are opening
-                Tracer.logger.debug("You were wrong...");
+                Tracer.logger.debug("Tracer.java just created file strace.csv " +
+                                    "in end_trace.bat but now cannot open it...");
                 ioe.printStackTrace();
             }
         } else {
@@ -218,7 +219,14 @@ public class Tracer {
         }
     }
 
-    // Returns the given ProcMon line split on "," or null if it is a line to skip
+    /**
+     * Returns the given ProcMon line split on "," or null if it is a line to
+     * skip (e.g. if it is a call from the Process Monitor executable itself,
+     * or is the "schema" line in the Process Monitor file).
+     *
+     * @param line A CSV line of output from Process Monitor.
+     * @return A String[] of the given Process Monitor output line split on ",".
+     */
     private String[] skipBadLine(String line) {
         line = line.substring(1, line.length() - 1); // strip quotes
 
@@ -242,8 +250,15 @@ public class Tracer {
         return parts;
     }
 
-    // Returns a set of pids that could be valid parent process pids for the
-    // process event data generated in ProcMon CSV log filename.
+    /**
+     * Returns a set of pids that could be valid parent process pids for the
+     * process event data generated in ProcMon CSV log filename.
+     *
+     * @param startingPid The PID for which to find parent PIDs (root process).
+     * @param filename The Process Monitor CSV log file name to scan for parent PIDs.
+     * @return A set of valid parent PIDs for all subprocesses of the given process.
+     * @throws IOException if filename is invalid.
+     */
     private Set<Integer> findParentPids(int startingPid, String filename)
             throws IOException {
         // parse out pairs of pids and parent pids from filename
@@ -280,7 +295,12 @@ public class Tracer {
         return parentPids;
     }
 
-    // Returns the pid of process proc (Windows-dependent)
+    /**
+     * Returns the process ID of the given Process (WINDOWS-DEPENDENT!!).
+     *
+     * @param proc The process to find the PID of.
+     * @return The PID of the given process.
+     */
     private int getPid(Process proc) {
         // EXTREMELY BAD; use JNA/Reflection Windows-dependent hack to get pid
         // https://stackoverflow.com/questions/4750470/how-to-get-pid-of

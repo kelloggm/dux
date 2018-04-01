@@ -14,6 +14,6 @@ public class WindowsStraceParser extends StraceParser {
         String[] parts = line.split("\",\""); // Process Monitor outputs csv
         String target = "\"" + parts[4] + "\""; // add quotes to match strace
         String[] args = {target};
-        return new StraceCall(parts[3], args, parts[5]);
+        return StraceCall.newWindowsInstance(parts[3], args, parts[5]);
     }
 }

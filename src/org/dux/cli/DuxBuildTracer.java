@@ -167,7 +167,7 @@ public class DuxBuildTracer {
             String os = System.getProperty("os.name");
             if (os.startsWith("Windows")) {
                 String[] parts = path.split(":"); // ["C", "\Windows\..."]
-                if (parts.length == 1) {
+                if (parts.length <= 1) {
                     // the file is "C:" -> ["C"]; nothing to do
                     continue;
                 }
