@@ -1,7 +1,6 @@
 package org.dux.stracetool;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
-import org.dux.cli.DuxCLI;
 
 import java.util.ArrayList;
 
@@ -48,7 +47,7 @@ public class LinuxStraceParser extends StraceParser {
 
     @Override
     protected @Nullable StraceCall parseLine(String line) {
-        DuxCLI.logger.debug("parsing this line: {}", line);
+        Tracer.logger.debug("parsing this line: {}", line);
 
         if (!line.matches(CALL_REGEX)) {
             return null;
@@ -80,10 +79,10 @@ public class LinuxStraceParser extends StraceParser {
         // there may be an errno after the return value; split on whitespace to ignore
         String rawReturn = rhs.split("\\s")[0];
         if (rawReturn.equals("?")) {
-            return new StraceCall(call, args);
+            return StraceCall.newLinuxInstanceNoReturn(call, args);
         }
 
         int returnValue = Integer.parseInt(rawReturn);
-        return new StraceCall(call, args, returnValue);
+        return StraceCall.newLinuxInstanceWithReturn(call, args, returnValue);
     }
 }

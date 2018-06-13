@@ -1,43 +1,112 @@
 package org.dux.stracetool;
 
-import org.dux.cli.DuxCLI;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public class Tracer {
-    // TODO Allow for arbitrary temp file names (need to sanitize in constructor)
-    private static final String TMP_FILE = ".dux_out";
-    private String[] args;
+/**
+ * A tracer object can be used to trace system calls of a specified executable
+ * on Linux or Windows.
+ *
+ * The typical usage is to create a Tracer with the Tracer.Builder class (will
+ * dispatch to either WindowsTracer or LinuxTracer depending on the current
+ * OS) and then call .trace() on the tracer to begin tracing a desired executable
+ * and logging its system calls to a specified output file.
+ *
+ * Additional options, such as filtering system calls, tracing subprocesses, etc.
+ * can be configured in the builder.
+ */
 
-    private static final String[] STRACE_CALL = {
-            "strace",
-            "-o", TMP_FILE               // write to tmp file
-    };
+public abstract class Tracer {
+    public static Logger logger;
+    static {
+        logger = (Logger) LoggerFactory.getLogger(Tracer.class);
+        logger.setLevel(Level.INFO);
+    }
 
-    private static final String[] PROCMON_CALL = {
-            "TODO implement"
-    };
+    protected Tracer() {
+        // hide this constructor
+    }
 
-    public Tracer(List<String> args) {
-        String os = System.getProperty("os.name");
-        List<String> argList = null;
-        if (os.startsWith("Linux")) {
-            argList = new ArrayList<>(Arrays.asList(STRACE_CALL));
-        } else if (os.startsWith("Windows")) {
-            throw new UnsupportedOperationException("Unsupported OS");
-            // argList = new ArrayList<>(Arrays.asList(PROCMON_CALL));
-        } else {
-            throw new UnsupportedOperationException("Unsupported OS");
+    public static class Builder {
+        // Required parameters
+        private final String fileName;
+        private final List<String> traceCommand;
+
+        // Optional parameters
+        private boolean traceSubprocesses = false;
+        private boolean filterCalls = false;
+
+        // The output file will be a CSV regardless of what you name it.
+        public Builder(String fileName, List<String> traceCommand) {
+            // argument checking
+            if (fileName == null || traceCommand == null) {
+                throw new NullPointerException("Arguments cannot be null");
+            }
+            if (fileName.length() == 0) {
+                throw new IllegalArgumentException("File name cannot be empty");
+            }
+            if (traceCommand.size() == 0) {
+                throw new IllegalArgumentException("Trace command cannot be empty");
+            }
+            if (fileName.contains(" ")) {
+                // spaces could mean they are passing arbitrary arguments to
+                // strace or procmon; disallow for now
+                throw new IllegalArgumentException("No spaces allowed in filename");
+            }
+
+            this.fileName = fileName;
+            // don't need to sanitize trace command because users could just
+            // run this command themselves without passing it through dux
+            this.traceCommand = traceCommand;
         }
-        argList.addAll(args);
-        this.args = argList.toArray(new String[0]);
+
+        public Builder traceSubprocesses() {
+            traceSubprocesses = true;
+            return this;
+        }
+
+        // For now, can only filter with the strace flag
+        // "-e trace=open,execve,readlink,fstat,stat,lstat"
+        public Builder filterCalls() {
+            filterCalls = true;
+            return this;
+        }
+
+        public Tracer build() {
+            String os = System.getProperty("os.name");
+            if (os.startsWith("Windows")) {
+                return new WindowsTracer(this);
+            } else if (os.startsWith("Linux")) {
+                return new LinuxTracer(this);
+            } else {
+                throw new UnsupportedOperationException("Unsupported OS");
+            }
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public List<String> getTraceCommand() {
+            return traceCommand;
+        }
+
+        public boolean isTraceSubprocesses() {
+            return traceSubprocesses;
+        }
+
+        public boolean isFilterCalls() {
+            return filterCalls;
+        }
     }
 
     // https://stackoverflow.com/questions/1732455/redirect-process-output-to-stdout
@@ -62,15 +131,5 @@ public class Tracer {
         }
     }
 
-    public void trace() throws IOException, InterruptedException {
-        DuxCLI.logger.debug("beginning a trace, getting runtime");
-        Runtime rt = Runtime.getRuntime();
-        DuxCLI.logger.debug("runtime acquired, executing program");
-        System.out.println(Arrays.toString(args));
-        Process proc = rt.exec(args);
-        Tracer.StreamGobbler outputGobbler = new Tracer.StreamGobbler(proc.getInputStream());
-        DuxCLI.logger.debug("waiting for build to terminate");
-        outputGobbler.start();
-        proc.waitFor();
-    }
+    public abstract void trace() throws IOException, InterruptedException;
 }

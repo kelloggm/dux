@@ -241,4 +241,4 @@ GOOGLE_APPLICATION_CREDENTIALS
 
 # application-specific
 # ignore strace temp file
-/.dux_out
+/.trace_out
