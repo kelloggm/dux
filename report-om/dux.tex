@@ -1,0 +1,238 @@
+\title{Dux: Automating Dependency Management -- Windows Porting}
+\author{
+        Omeed Magness \\
+        University of Washington
+            \and
+        Martin Kellogg \\
+        University of Washington
+}
+
+\documentclass[10pt,conference]{IEEEtran}
+
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\usepackage{myref}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tikz}
+
+\begin{document}
+
+\maketitle
+
+\lstset{language=bash}
+
+\begin{abstract}
+
+The Dux build orchestration tool~\cite{dux} provides a guarantee that
+after observing a successful build of a project, it can reproduce this build on
+any other machine by saving a configuration file and dependency artifacts
+to the cloud. However, Dux was limited to Linux because of its dependency on strace,
+Linux's system call tracing utility.
+
+In this report, we discuss modifications to Dux that allow it to run on Windows. 
+We evaluated and selected a suitable replacement for strace on Windows, rewrote
+the tracer and parser to target this new tool, and rewrote the backend logic of
+Dux to handle the new trace format.
+
+In the process, we refactored and decoupled a cross-platform strace-like library
+which provides a consistent interface to a system call tracing tool across
+Windows and Linux.
+
+\end{abstract}
+
+\section{Introduction}
+
+The Dux build orchestration tool~\cite{dux} traces a demonstrated build command
+and observes the system calls that the build command makes. From this list of
+system calls, it observes which files a build is accessing. Dux saves these files along
+with any relevant environment variables, preserving the ``execution context'' that
+made that build possible. Dux can then recreate the build on another computer. 
+
+Although Dux itself is written in Java (making the majority of the code
+automatically cross-platform), the tracing currently requires Linux's strace utility. 
+We want Dux to be cross-platform, because the best tools that become
+widely adopted in the community are always cross-platform (e.g. git, LaTeX, etc.).
+To make Dux cross-platform, we must find a suitable replacement
+for strace on other platforms. 
+
+This paper provides two main contributions. First, we present a platform-independent
+strace library which is decoupled from Dux and can be used in other projects.
+Second, we use this library (as a client) within Dux to trace, parse, filter, and
+construct objects representing the output of a system call tracing utility. Dux
+makes general-purpose, platform-independent calls into the library to trace
+the execution of a process and the library dispatches to the appropriate tool
+for the operating system on which the library is running, then processes the
+output appropriately and provides a platform-independent way to discover the
+contents of the execution trace.
+
+The remainder of this paper discusses porting Dux to Microsoft Windows. Section II
+describes how we picked a replacement for strace on Windows. Section 
+III discusses the implementation of the port. Section IV evaluates the end result
+and discusses limitations and future work.
+
+\section{Finding a Replacement for Strace} 
+
+The first task in porting Dux to Windows was finding a suitable replacement
+for strace. We evaluated four open-source command-line tools that claimed to be
+similar to strace: DrMemory\footnote{\url{http://www.drmemory.org/}},
+StraceNT\footnote{\url{http://intellectualheaven.com/default.asp?BH=StraceNT}},
+the strace Cygwin port\footnote{\url{http://cygwin.com/cygwin-ug-net/strace.html}},
+and NTTrace\footnote{\url{http://www.howzatt.demon.co.uk/NtTrace/}}. 
+All had significant limitations -- they could only be used on GUIs, could only
+be use on command-line applications, or were extremely unreliable and frequently
+crashed (Fig. 1). All of these projects were old, and development effort had been
+abandoned in recent years. Although each of these may have been excellent tools
+when actively developed, they no longer did the job.
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{ |p{1.6cm}|p{1.5cm}|p{1 cm}|p{3 cm}|}
+ \hline
+ Tool & Can trace: & Reliable & Notes \\ \hline \hline
+ Dr.Memory & GUIs, command-line & Yes & Works well on Windows 7, but not on Windows 10? \\ \hline
+ StraceNt & GUIs (sort-of) & No & Crashes for GUIs and command-line. \\ \hline
+Cygwin strace port & command-line & Yes & Seems to only be able to trace other Cygwin binaries. \\ \hline
+NTTrace & GUIs, command-line & Sort-of & Has issues dealing with 32 vs. 64-bit tracing; frequently errors. \\
+ \hline
+\end{tabular}
+\end{center}
+\caption{Comparison of the primary strace replacements we evaluated on Windows.
+We also briefly investigated Event Tracing for Windows (ETW), although this seemed
+to require a lot more work (essentially a re-implementation of strace), so we
+abandoned that approach.}
+\end{figure}
+
+For that reason, we chose Process 
+Monitor\footnote{\url{https://docs.microsoft.com/en-us/sysinternals/downloads/procmon}},
+Microsoft's official process tracing utility. Process Monitor is reliable, is
+still actively developed, and produces very thorough event traces (system calls, 
+registry accesses, etc.) for all processes running on a system. Unfortunately, it is not
+exactly meant for use like strace -- most operations must go through GUIs and,
+in general, it traces all events across all processes on the system at once, not just 
+an individual process. Although its advanced GUI filtering makes it possible to
+filter by process ID (PID), it is hard to trace only the events of an arbitrary process (one whose
+PID is not known ahead of time).
+
+So, although Process Monitor was not exactly the tool we wanted, we chose it
+because of its reliability and data quality. We found a command-line option to
+extract a CSV file of event data from Process Monitor, and then parsed that data.
+
+\section{Implementation}
+
+\subsection{Environment Setup}
+
+The next step in porting Dux to Windows was setting up Dux's development environment,
+which entailed installing Google's Bazel build system, configuring a Google Cloud 
+bucket (for use as a Dux file server), configuring credentials and service account
+keys for that account, and integrating all of this with the Travis CI tool. The setup
+turned out to be nontrivial, and we updated the README appropriately so
+that future developers joining Dux will have a much smoother time.
+
+\subsection{Reworking the Strace Dependency}
+
+Next, we decoupled the strace dependence in Dux (moving the tracing code to a
+separate package) and refactored the existing strace code to be more generic. 
+Ideally, if a wrapper can be created around the functionality of an strace-like tool
+on each platform, it is possible to make a ``cross-platform strace tool library"
+which could be used in projects other than Dux.
+
+Then, we began creating the batch scripts and configurations necessary to
+extract data from Process Monitor. Once we had this data, parsing it was 
+fairly simple, since it was a CSV file. The existing Dux parser was refactored, with
+an inheritance hierarchy to support parsing across multiple platforms.
+
+\subsection{Filtering the Process Monitor Data}
+
+With the Process Monitor data parsed out and represented as Java objects ("StraceCall"
+objects), the data still needed to be filtered down. Because Process Monitor's filters
+are fairly GUI-oriented, it was significantly easier to do the event filtering
+after the data collection.
+
+We generalized certain strace flags to work with Process Monitor as well, by using
+the Builder pattern. For example, clients of our cross-platform strace-tool library
+can now ask to trace subprocesses on a trace, and this will dispatch to \texttt{-f} on
+Linux (the flag for strace to trace subprocesses) , or post-collection filtering
+on Windows. Because the data is all mixed together across processes in Windows,
+we use a fixed point algorithm to determine subprocess PIDs.
+
+Using this strace tool library, we filtered down to system calls
+only relevant to Dux (such as creating a file or process), and also
+filtered by PID to only keep system calls originating from the desired process
+to trace and its subprocesses. 
+
+\subsection{Adjusting the Strace Call Interface}
+
+Once we had a filtered set of StraceCall Java objects representing the Process
+Monitor data, the next step was to use this data. We wanted to provide a generic,
+cross-platform way for a client to extact properties about a sytem call, so we
+created some wrapper functions for these StraceCall objects to determine if,
+for example, the call was an exec, open, etc.
+
+In other words, rather than hardcoding a call to strace, manually parsing, 
+and inspecting properties of each StraceCall object, a client of our strace tool
+library now just specifies some behavior they want from the trace
+(e.g. tracing subprocess, or filtering to certain calls) and they will get back a list
+of the traced calls, already parsed and filtered. And, to interact with these calls,
+there is a platform independent interface. With this interface adjusted, the
+backend of Dux could now be re-written to use the new interface. This essentially
+completed an initial implementation of porting Dux to Windows!
+
+\section{Evaluation, Limitations, and Future Work}
+
+To evaluate the prototype of the port of Dux to Windows, we tested a toy
+example. First, we installed a free Pascal compiler (fpc) 
+\footnote{\url{https://www.freepascal.org/}} onto a Windows workstation,
+and then compiled a ``Hello World" program. Dux saved a configuration 
+file and the necesssary dependencies to the cloud. We then went to another Windows
+workstation without fpc installed, and asked Dux to check the build file for missing
+dependencies. It downloaded the fpc binaries, set certain environment variables,
+and then went on to compile the ``Hello World" program. When run, that program
+produced the expected output.
+
+We also did some stress testing and saw that Dux could bootstrap itself (i.e. trace
+and record its own Google Bazel build). This involved uploading many hundreds
+of files to the cloud (and so was quite slow). We are still evaluating if it was
+necessary to upload as many dependencies as we did. Some of these 
+``dependencies'' may have actually just been user-specific
+temporary files that should have been excluded. This behavior could be due
+to the fact that the Process Monitor output format makes it tricky to handle file
+system links. Investigating and addressing this issue is future work.
+
+The Windows port of Dux suffers from many of the same limitations as the original
+Dux project -- in particular, the static versioning. This project also has added
+the limitation that a Dux build file for a project on Windows will likely
+not be able to reconstruct the environment on Linux properly, and vice versa,
+because of differing binaries. We see this port as useful for the sake of one
+Windows developer demonstrating a build to another Windows developer, or, as 
+with the original  version of Dux, one Linux developer demonstrating a build to 
+another Linux devloper. It is reasonably common for co-developers to conform
+to some standard environment. 
+
+As an orthogonal point, our ``cross-platform strace-tool" library is truly meant to be
+cross-platform. In future work, we would like to generalize the 
+interface of this strace tool library so that it can be released as its own tool. 
+As of now, its functionality is fairly specific to Dux's use case.
+
+\section{References}
+
+\begingroup
+\renewcommand{\section}[2]{}%
+
+% The following two commands are all you need in the initial runs of
+% your .tex file to produce the bibliography for the citations in your
+% paper.
+\bibliographystyle{plain}
+\bibliography{genprog-bib/merged}
+% You must have a proper ``.bib'' file
+% and remember to run:
+% latex bibtex latex latex
+% to resolve all references
+%
+% ACM needs 'a single self-contained file'!
+%
+\endgroup
+
+\end{document}
