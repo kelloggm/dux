@@ -25,7 +25,7 @@ import static org.dux.cli.DuxFileHasher.hashFile;
  * Currently depends on having strace available
  */
 public class DuxBuildTracer {
-    private static final String TMP_FILE = "trace.out";
+    private static final String TMP_FILE = ".trace.out";
     private Tracer t;
 
     private Map<Path, HashCode> fileHashes;
